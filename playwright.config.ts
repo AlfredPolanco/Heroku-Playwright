@@ -42,10 +42,13 @@ export default defineConfig({
      Playwright's default (half the cores) is fine. */
   workers: isCI ? 4 : undefined,
 
-  /* Per-test budget. Generous because a single test can absorb a cold-dyno
-     page load plus the dynamic-loading page's own 5s delay. This is a ceiling,
-     not a wait: web-first assertions still resolve as soon as they can. */
-  timeout: 60_000,
+  /* Per-test budget. Must exceed the worst-case navigation spend -- three
+     attempts at `navigationTimeout` plus backoff (~48s, see BasePage.navigate)
+     -- plus the dynamic-loading page's own 5s delay. Sized so that an
+     unreachable host reports the actual navigation error rather than a vague
+     test timeout. A ceiling, not a wait: web-first assertions still resolve as
+     soon as they can. */
+  timeout: 90_000,
 
   expect: {
     /* Left at Playwright's 5s default on purpose. The long wait this suite
@@ -60,9 +63,14 @@ export default defineConfig({
 
     /* Sized for a slow shared host. These cover network/navigation latency,
        which is infrastructure, not application behaviour -- unlike the
-       assertion timeout above. */
+       assertion timeout above.
+
+       navigationTimeout is 15s rather than 30s because navigation is retried
+       (BasePage.navigate): when the dyno is healthy it answers in well under a
+       second, so a stalled attempt is better cut short and retried than left
+       hanging for 30s. Three 15s attempts also fit inside the test budget. */
     actionTimeout: 15_000,
-    navigationTimeout: 30_000,
+    navigationTimeout: 15_000,
 
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',

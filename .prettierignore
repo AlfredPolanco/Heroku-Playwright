@@ -4,3 +4,8 @@ test-results/
 blob-report/
 package-lock.json
 LICENSE
+
+# Verbatim AI session transcripts: archival records, not source. Prettier would
+# rewrite their content (collapsing whitespace, re-indenting quoted blocks),
+# which would make them no longer faithful records of what was actually said.
+ai-sessions/

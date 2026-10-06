@@ -107,36 +107,68 @@ Two further details that a naive test gets wrong:
 
 No `waitForTimeout`, no `page.waitForSelector`, no sleeps anywhere — `playwright/no-wait-for-timeout` is an ESLint **error**, so a regression breaks the build rather than slipping through review.
 
-### Navigation waits on `domcontentloaded`
+## Surviving an unreliable target
 
-`page.goto` defaults to `waitUntil: 'load'`, which blocks on every decorative asset — the fork-me PNG, font-awesome, jQuery UI — that no test touches. `domcontentloaded` is sufficient (the DOM is parsed and all blocking head scripts and inline scripts have run, which is everything these pages need to be interactive) and strictly less flaky against a host that dribbles out assets. Anything arriving later is covered by web-first assertions.
+The target is a free shared Heroku dyno that intermittently stops serving. Initially the suite could not complete a **single** page load against it; it now runs green. Three changes got it there, each adopted only after measurement — and two plausible-sounding fixes were tested and **rejected**.
 
-Honest limit: if the host stalls jQuery itself, `DOMContentLoaded` stalls too and `navigationTimeout` is what catches it. This narrows the common failure mode; it does not cure a dead dyno.
+### 1. Don't fetch assets no assertion needs (the big one)
 
-## Stability results
+Every test gets a fresh browser context, so every page load refetches the whole asset set cold — about **380 KB of it stylesheets** (`app.css` alone is 353 KB). That payload is what the dyno cannot deliver. Measured over 8 cold-cache navigations while the app was degraded:
 
-`test:stability` runs the dynamic loading spec 20× to prove the timeout reasoning holds rather than asserting it. Run with `--retries=0` so nothing is masked:
+| Subresources dropped          | Navigations OK | Avg    |
+| ----------------------------- | -------------- | ------ |
+| none                          | **1/8**        | 2367ms |
+| images, fonts, unused scripts | 3/8            | 1481ms |
+| + stylesheets                 | **8/8**        | 708ms  |
+
+So [`fixtures/pages.fixture.ts`](fixtures/pages.fixture.ts) aborts images, fonts, media, stylesheets, and three scripts the pages under test provably don't use (a 132 KB analytics bundle, jQuery UI, and Foundation — which only powers the flash dismiss "×" that no test clicks). jQuery is kept; the dynamic-loading pages depend on it. This also cut the full-suite runtime from ~3.4 min to ~20 s.
+
+**The trade-off, stated plainly:** with CSS dropped, `toBeVisible()` no longer reflects stylesheet-driven visibility. That is sound _for these pages_ — every show/hide under test is driven by inline styles jQuery sets (`#finish` ships with `style='display:none'`; `#loading` is hidden via `.hide()`), which the suite still verifies exactly. It would **not** be sound on a page that hides things with a CSS class, and the fixture should be revisited before covering one. `LOAD_ALL_ASSETS=1 npm test` opts out.
+
+### 2. Navigation waits on `domcontentloaded`, and is retried
+
+`page.goto` defaults to `waitUntil: 'load'`. `domcontentloaded` is sufficient — the DOM is parsed and every blocking head script (jQuery) and inline script has run, which is all these pages need to be interactive. Anything later is covered by web-first assertions.
+
+[`BasePage.navigate()`](pages/base.page.ts) also retries navigation up to 3 times with linear backoff, because after the asset fix the _only_ remaining failure mode was `page.goto` timing out on a random test per run while every assertion passed. This retries **reaching the page** — an idempotent GET of a static document, before any assertion runs — and never retries application behaviour, which stays single-shot and web-first. It is not a hard wait: nothing sleeps on app state. Non-transient errors (a 404, a bad URL) are re-thrown immediately, so a real mistake still fails fast.
+
+`navigationTimeout` is 15 s rather than 30 s precisely _because_ navigation is retried: a healthy dyno answers in well under a second, so a stalled attempt is better cut short and retried. Per-test `timeout` is 90 s so the worst case (three attempts + backoff + the 5 s app delay) reports the real navigation error instead of a vague test timeout.
+
+### Rejected after testing
+
+- **Disabling HTTP/2.** Single `curl` requests succeeded while concurrent multiplexed ones timed out, which looked like a broken HTTP/2 path. Comparing Chromium with and without `--disable-http2` showed both loading fine — the app had simply recovered between probes. No evidence, so no workaround.
+- **Capping workers.** `--workers=1` did not help during a bad phase, confirming the suite was not the source of the load.
+
+`workers` is still capped at 4 in CI, but for courtesy to a shared host rather than as a flakiness fix.
+
+## Results
+
+All runs with `--retries=0`, so nothing is masked by retries.
+
+**Against the live app:**
 
 ```
-120/120 passed (2.8m)   # 2 tests × 20 repeats × 3 browsers, zero retries, zero flakes
+npm run test:stability   ->  120/120 passed (3.0m)   # 2 tests x 20 repeats x 3 browsers
+npm test                 ->   30/30  passed (20.7s)  # 4 of 5 consecutive runs fully green;
+                                                     # 1 run had a single page.goto timeout
 ```
 
-Full suite: **30/30 passed** across Chromium, Firefox and WebKit.
+**Against the local replica** (deterministic, no third party): 30/30 and 120/120.
 
-These numbers were produced against the local replica, because the live app was unable to serve browser traffic throughout development — see below. The suite is unmodified between targets; only `BASE_URL` differs.
+The residual ~1-in-5 chance of one transient navigation failure is upstream availability, not suite logic: the failures are always `page.goto` timeouts on a _different_ random test each time, never assertion failures, and CI's `retries: 2` absorbs them. If the dyno enters a prolonged bad phase, runs will fail regardless of client-side technique — nothing in test code can fix a host that will not serve bytes.
 
-## Live app availability — a caveat worth reading
+## Local replica
 
-The live app was **persistently unable to complete a browser page load** from this machine during development. Diagnosis, since the symptom looks like a test bug and is not:
+`tools/local-app/server.js` is a dependency-free Node server reproducing the pages under test, for deterministic stability runs and for working while the upstream is unavailable:
 
-- Individual requests over `curl` succeeded consistently (HTTP 200, <1 s).
-- Six _concurrent_ requests to the Heroku app timed out; the same six against `example.com` all returned 200. So the local network and HTTP/2 stack were fine — the dyno was not.
-- A browser page load needs ~7 concurrent subresources. All of them, including the blocking `jquery-1.11.3.min.js`, stalled indefinitely, so neither `load` nor `domcontentloaded` could ever fire.
-- Reducing to `--workers=1` and a single test did not help, confirming the suite was not the source of the load.
+```bash
+npm run local-app                 # terminal 1
+npm run test:local                # terminal 2
+npm run test:stability:local
+```
 
-This is the app being "slow or occasionally unresponsive" at the extreme end. It is an upstream outage, not a defect in the suite, and nothing in test code can fix an upstream that will not serve bytes. **The suite should be re-run against the live app once it recovers**; the configuration already targets it by default.
+Fidelity: element ids, label/input wiring, accessible names, the inline `display:none` on `#finish`, the 5000 ms delay and the `/authenticate` flash-and-redirect behaviour are copied verbatim from the live app, so the same locators and the same timeout reasoning apply. It even reproduces the duplicate-heading strict-mode trap. Two deliberate differences: page scripts are rewritten in vanilla JS (identical DOM mutations and timing, without vendoring ~96 KB of jQuery), and decorative assets are omitted since no assertion depends on them.
 
-This is also why `workers` is capped in CI and why the local replica exists.
+It is a harness for the pages under test, **not** a general stand-in for the app. The suite targets live by default and passing against the replica is not a substitute for passing against live.
 
 ## Local replica
 
@@ -163,7 +195,7 @@ It is a harness for the pages under test, **not** a general stand-in for the app
 - _Across runners_ — a `matrix` over `[chromium, firefox, webkit]` puts each browser on its own runner, concurrently. `fail-fast: false`, so a WebKit-only break still reports Chromium and Firefox. Each job installs only the browser it needs.
 - _Within a runner_ — `fullyParallel: true` runs files **and** tests within a file in parallel. That is safe rather than optimistic here: every test navigates itself, shares no login state, and depends on no ordering.
 
-**Workers are capped at 4 in CI.** Not a performance tweak — the target is a free, shared, third-party app. Unlimited workers would both hammer someone else's host and manufacture flakiness through self-inflicted latency, making the suite the cause of its own failures. Locally, Playwright's default (half the cores) applies.
+**Workers are capped at 4 in CI** out of courtesy to a shared third-party host, not as a flakiness fix — `--workers=1` was tested during a bad phase and did not help. Locally, Playwright's default (half the cores) applies.
 
 **Retries: 2 in CI, 0 locally.** CI retries absorb genuine upstream unreliability — cold dynos, transient 5xx. Locally they stay at 0 so flakiness is never hidden during development, and `test:stability` runs with retries off so it cannot be flattered by them.
 
@@ -183,6 +215,8 @@ TypeScript runs `strict` plus `noUncheckedIndexedAccess`, `noImplicitOverride`, 
 
 Kept out on purpose: no custom assertion wrappers around `expect`, no BDD layer, no config abstraction over `defineConfig`, no `data-testid` hunting on an app I don't control. Each would add indirection without removing duplication at this size.
 
+`ai-sessions/` is Prettier-ignored: those files are verbatim session transcripts, and reformatting them (collapsing whitespace, re-indenting quoted blocks) would stop them being faithful records.
+
 Edge cases were added where they test distinct behaviour — empty credentials (a different validation path), logout (a state transition back to `/login`), toggling every checkbox via `setChecked` (absolute state, so a lost click cannot pass by accident), and `/dynamic_loading/2` (element injected rather than revealed, exercising the `toHaveCount(0)` → `toBeVisible` path the first example cannot). The suite was not padded beyond that.
 
 ## AI usage
@@ -192,6 +226,8 @@ Claude (Opus 5) in Claude Code wrote the implementation under my direction and a
 - **Verification before implementation.** Every flash message, DOM structure and element role was probed on the live app with `curl` _before_ any assertion was written — the brief's "verify before hardcoding" instruction, applied as the first step rather than a review afterthought. This is what surfaced the `×` dismiss link that breaks exact `toHaveText`, the Logout link-vs-button role, and the username-first validation order.
 - **Running the tests was treated as part of writing them.** The duplicate "Secure Area" heading was found by executing the suite, not by reading markup — and it would have been a real failure against the live app too.
 - **Lint findings were fixed by restructuring, not suppressing.** `playwright/no-conditional-in-test` flagged the `if (outcome === 'success')` branch in the first draft of the login loop. Rather than add a disable comment, the data model was split into two arrays, which removed the conditional and simplified the types. The rule was right.
-- **The upstream outage was diagnosed rather than worked around.** Differential testing (`curl` vs browser, sequential vs concurrent, Heroku vs `example.com`) established the failure was upstream before any code changed — which prevented "fixing" a non-existent test bug by inflating timeouts, the tempting wrong move.
+- **The upstream problem was measured, not guessed at.** Differential testing (`curl` vs browser, sequential vs concurrent, HTTP/1.1 vs HTTP/2, Heroku vs `example.com`) established the failure was upstream before any code changed — which prevented "fixing" a non-existent test bug by inflating timeouts, the tempting wrong move. Two candidate fixes were then **rejected on evidence**: disabling HTTP/2 (the app had merely recovered between probes) and capping workers (no effect during a bad phase).
+- **A confounded experiment was caught and redone.** The first asset-blocking measurement reused one browser context, so navigations 2–N were served from the browser's HTTP cache and the comparison showed blocking as _harmful_ (8/10 vs 10/10). Re-running with a fresh context per navigation — matching what Playwright actually does per test — reversed the result decisively (8/8 vs 1/8) and identified stylesheets as the real culprit. The first number was measured, plausible, and wrong; it would have led to shipping nothing and declaring the app simply broken.
+- **Claims in this README were checked against reruns.** An earlier draft asserted the live app "cannot serve browser traffic" and that no client-side change could help. Both turned out to be overstated once the asset fix landed, and the section was rewritten rather than left to read well.
 
-Judgement I kept: abstraction boundaries, the decision not to inflate the global timeout, scoping `BasePage` to actual reuse, capping CI workers out of courtesy to a shared host, and treating the local replica as a verification aid rather than letting it quietly become the real target.
+Judgement I kept: abstraction boundaries, the decision not to inflate the global timeout, scoping `BasePage` to actual reuse, retrying navigation but never assertions, accepting the CSS-fidelity trade-off consciously and documenting it rather than burying it, and treating the local replica as a verification aid rather than letting it quietly become the real target.
