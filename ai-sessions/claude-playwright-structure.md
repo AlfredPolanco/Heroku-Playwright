@@ -4474,3 +4474,492 @@ I dropped stylesheets, which weakens toBeVisible(). It's sound here because ever
 Two fixes I tested and rejected: disabling HTTP/2 (the app had merely recovered between probes) and capping workers (no effect). Also, my first blocking measurement was confounded — it reused one context, so iterations 2–10 were cache hits and showed blocking as harmful. Re-running with a fresh context per navigation reversed the result. Had I trusted that first number, I'd have shipped nothing.
 
 Residual risk: roughly 1 run in 5 still sees a single page.goto timeout on a random test. CI's retries: 2 absorbs that, but a prolonged dyno bad phase will still fail regardless.
+
+
+Fix three brief-compliance issues before submission. Keep everything else as is.
+
+1. Rename .github/workflows/playwright.yml to .github/workflows/tests.yml and update every README reference.
+2. Parallelism: the brief says no more than 3 workers in parallel. The current setup (matrix of 3 browser jobs, workers capped at 4) can run up to 12 concurrently. Change to a single e2e job that runs all three projects with workers: 3 in playwright.config.ts (CI) and --workers=3 passed explicitly in the workflow. Install all three browsers in that job. Update the README CI section to explain the decision and mention the matrix alternative (1 worker per job) as a trade-off. Make sure the JUnit filename logic still works without PW_PROJECT.
+3. Caching: add actions/cache for node_modules keyed on runner.os + hashFiles('package-lock.json'), running npm ci only on cache miss (both jobs). Add actions/cache for ~/.cache/ms-playwright keyed on runner.os + the installed Playwright version; on miss run `npx playwright install --with-deps`, on hit run `npx playwright install-deps`. Document it in the README.
+4. Remove the duplicated "Local replica" section in the README.
+
+Run verify and the full suite locally, then commit with Conventional Commits. Do not push.
+Read playwright.yml
+Bash Find README refs and duplicate sections
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+echo "=== README refs to workflow file ==="; grep -n "playwright.yml\|tests.yml" README.md
+echo "=== Local replica occurrences ==="; grep -n "^## Local replica\|^### Local replica\|local-app.*terminal\|Local replica" README.md
+echo "=== PW_PROJECT refs ==="; grep -rn "PW_PROJECT" --include="*.ts" --include="*.yml" --include="*.md" .
+
+OUT
+=== README refs to workflow file ===
+189:[`.github/workflows/playwright.yml`](.github/workflows/playwright.yml) — on push/PR to `main`, nightly, and manual dispatch.
+=== Local replica occurrences ===
+22:| `npm run local-app`      | Start the offline replica (see [Local replica](#local-replica)) |
+159:## Local replica
+164:npm run local-app                 # terminal 1
+173:## Local replica
+178:npm run local-app                 # terminal 1
+=== PW_PROJECT refs ===
+playwright.config.ts:12: * The JUnit path is suffixed per browser project when PW_PROJECT is set, so a
+playwright.config.ts:16:const junitOutputFile = process.env.PW_PROJECT
+playwright.config.ts:17:  ? `test-results/junit-${process.env.PW_PROJECT}.xml`
+README.md:202:**Reporters.** Local: `list` + `html`. CI: `github` (inline PR annotations), `junit`, `html` with `open: 'never'` (so the run never blocks on a browser), plus `list` for a readable log. The JUnit path is suffixed per browser via `PW_PROJECT`, so the three matrix legs cannot overwrite each other's results file.
+.github/workflows/playwright.yml:71:          PW_PROJECT: ${{ matrix.project }}
+ai-sessions/claude-playwright-structure.md:1182: * The JUnit path is suffixed per browser project when PW_PROJECT is set, so a
+ai-sessions/claude-playwright-structure.md:1186:const junitOutputFile = process.env.PW_PROJECT
+ai-sessions/claude-playwright-structure.md:1187:  ? `test-results/junit-${process.env.PW_PROJECT}.xml`
+ai-sessions/claude-playwright-structure.md:1386:          PW_PROJECT: ${{ matrix.project }}
+ai-sessions/claude-playwright-structure.md:2827:CI=true PW_PROJECT=chromium BASE_URL=http://127.0.0.1:3100 npx playwright test --project=chromium 2>&1 | tail -12
+ai-sessions/claude-playwright-structure.md:3025:**Reporters.** Local: `list` + `html`. CI: `github` (inline PR annotations), `junit`, `html` with `open: 'never'` (so the run never blocks on a browser), plus `list` for a readable log. The JUnit path is suffixed per browser via `PW_PROJECT`, so the three matrix legs cannot overwrite each other's results file.
+ai-sessions/claude-playwright-structure.md:4391:CI=true PW_PROJECT=chromium npx playwright test --project=chromium 2>&1 | grep -oE "::notice.*|[0-9]+ (passed|failed|flaky).*" | tail -3
+Confirmed the duplicate at lines 159 and 173. Let me read the relevant regions.
+
+Read README.md (lines 141-210)
+Read playwright.config.ts (lines 2-49)
+Now let me write the new workflow.
+
+Bash Rename workflow file via git mv
+IN
+git mv .github/workflows/playwright.yml .github/workflows/tests.yml && ls .github/workflows/
+
+OUT
+tests.yml
+Write tests.yml
+127 lines
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # The target app is a shared third-party host; a nightly run surfaces
+  # app-side drift (changed copy, changed markup) independently of our commits.
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Static checks are fast and need no browsers, so they run as their own job
+  # rather than serialising the e2e run behind a lint install.
+  static-checks:
+    name: Typecheck, lint & format
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # node_modules is cached directly, so the common path skips `npm ci`
+      # entirely rather than just reusing the download cache. Safe to key on the
+      # lockfile alone because node-version is pinned above, so the installed
+      # tree (including any native binaries) is reproducible per OS.
+      - name: Cache node_modules
+        id: node-modules-cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run format:check
+
+  e2e:
+    name: E2E (chromium, firefox, webkit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Cache node_modules
+        id: node-modules-cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
+        run: npm ci
+
+      # The browser cache key must track the Playwright version that will drive
+      # the browsers, so it is read from the installed package rather than the
+      # lockfile. This step therefore has to run after dependencies exist.
+      - name: Resolve Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright.outputs.version }}
+
+      # On a miss, download the browsers and their OS packages.
+      - name: Install browsers and OS dependencies
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps
+
+      # On a hit, the browser binaries are restored from the cache but the OS
+      # packages they link against are NOT -- those live in /usr/lib, outside the
+      # cached path, and a fresh runner does not have them. `install-deps`
+      # installs just those, skipping the browser download.
+      - name: Install OS dependencies only
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps
+
+      # All three browser projects run in this one job at --workers=3, so total
+      # concurrency against the shared target app is capped at 3 regardless of
+      # how Playwright schedules the projects. Passed explicitly here as well as
+      # set in playwright.config.ts, so the cap is visible at the call site.
+      - name: Run Playwright tests
+        run: npx playwright test --workers=3
+        env:
+          CI: true
+
+      # !cancelled(): the report is most valuable precisely when the run failed.
+      - name: Upload HTML report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+
+      - name: Upload traces, screenshots & JUnit results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results/
+          retention-days: 14
+Now the config: workers 3, and the JUnit comment updated for the single-job layout.
+
+Edit playwright.config.ts
+Added 2 lines
+Edit playwright.config.ts
+Added 3 lines
+Now the README: remove the duplicate section and rewrite the CI section.
+
+Edit README.md
+Removed 14 lines
+Edit README.md
+Added 12 lines
+Bash Find stale worker/workflow references
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+grep -n "capped at 4\|workers.*4\|playwright\.yml\|matrix leg" README.md
+
+OUT
+141:`workers` is still capped at 4 in CI, but for courtesy to a shared host rather than as a flakiness fix.
+187:**Why not a browser matrix?** A `matrix` over `[chromium, firefox, webkit]` is the more obvious shape and finishes in roughly a third of the wall time, since each browser gets its own runner. The catch is that workers multiply across jobs: three matrix legs at the config's 3 workers would put **9** concurrent requests on the shared app, and the cap would be silently violated by a setting that still reads `3`. The matrix is viable only at `--workers=1` per leg (3 jobs × 1 worker = 3), which keeps the cap and buys back wall time at the cost of 3× the runner minutes, 3× the browser installs, and a split JUnit artifact. For a suite that completes in well under a minute, the single job is the better trade; `PW_PROJECT` is still wired up in the config so switching back only needs the workflow changed.
+Edit README.md
+Modified
+Now let me validate the workflow YAML and run the checks.
+
+Bash Structurally validate workflow
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+node -e "
+const fs=require('fs');
+const y=fs.readFileSync('.github/workflows/tests.yml','utf8');
+// crude structural checks
+const need=['name: Tests','static-checks:','e2e:','--workers=3','actions/cache@v4','node_modules','~/.cache/ms-playwright','install-deps','install --with-deps','hashFiles(\'package-lock.json\')'];
+for(const n of need) console.log((y.includes(n)?'OK  ':'MISS') + '  ' + n);
+console.log('--- matrix removed:', !y.includes('matrix') ? 'OK' : 'STILL PRESENT');
+console.log('--- PW_PROJECT removed from workflow:', !y.includes('PW_PROJECT') ? 'OK' : 'STILL PRESENT');
+"
+echo "=== version resolution works locally? ==="
+node -p "require('@playwright/test/package.json').version"
+
+OUT
+OK    name: Tests
+OK    static-checks:
+OK    e2e:
+OK    --workers=3
+OK    actions/cache@v4
+OK    node_modules
+OK    ~/.cache/ms-playwright
+OK    install-deps
+OK    install --with-deps
+OK    hashFiles('package-lock.json')
+--- matrix removed: OK
+--- PW_PROJECT removed from workflow: OK
+=== version resolution works locally? ===
+1.63.0
+Bash Run verify
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+npm run format >/dev/null 2>&1
+npm run verify 2>&1 | grep -E "error|warn|All matched|problems" | head
+
+OUT
+All matched files use Prettier code style!
+[This command modified 1 file you've previously read: README.md. Call Read before editing.]
+Verify passes. Now let me confirm the CI path produces 3 workers and the unsuffixed JUnit file.
+
+Bash CI simulation with workers=3
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+rm -rf test-results playwright-report
+echo "=== CI=true, no PW_PROJECT (mirrors the workflow) ==="
+CI=true npx playwright test --workers=3 2>&1 | grep -oE "Running [0-9]+ tests using [0-9]+ workers?|::notice.*|[0-9]+ (passed|failed|flaky).*" | head -5
+echo "=== JUnit artifact ==="
+ls test-results/
+
+OUT
+=== CI=true, no PW_PROJECT (mirrors the workflow) ===
+Running 30 tests using 3 workers
+::notice title=🎭 Playwright Run Summary::  30 passed (1.2m)
+30 passed (1.2m)
+=== JUnit artifact ===
+junit.xml
+Exactly as intended: 30 tests, 3 workers, all three browsers, junit.xml unsuffixed. Now the normal local full suite.
+
+Bash Full local suite, no retries
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+echo "=== full local suite (retries=0) ==="
+npx playwright test --retries=0 --reporter=line 2>&1 | grep -oE "Running [0-9]+ tests using [0-9]+ workers?|[0-9]+ (passed|failed|flaky).*"
+
+OUT
+=== full local suite (retries=0) ===
+Running 30 tests using 5 workers
+1 failed
+29 passed (1.6m)
+One failure — let me confirm it's the known transient navigation issue rather than something I broke.
+
+Bash Re-run and classify any failure
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+npx playwright test --retries=0 --reporter=line 2>&1 | grep -E "TimeoutError|Error: expect|strict mode|✘|[0-9]+ (passed|failed)" | head -10
+
+OUT
+    TimeoutError: page.goto: Timeout 15000ms exceeded.
+    TimeoutError: page.goto: Timeout 15000ms exceeded.
+    TimeoutError: page.goto: Timeout 15000ms exceeded.
+  3 failed
+  27 passed (1.7m)
+All three are page.goto timeouts — upstream, not my changes (which only touched CI config and docs; local runs are unaffected, still using 5 workers). Let me confirm the app's current state.
+
+Bash Check live app health
+IN
+cd /private/tmp/claude-501/-Users-alfredpolanco-Documents-PersonalProjects-Heroku-Playwright/1261e399-d780-4470-b726-89012e4fe882/scratchpad
+node conc.js concurrent 6 2>&1 | tail -3
+
+OUT
+  200      1380ms   /js/foundation/foundation.js
+  200      1418ms   /js/foundation/foundation.alerts.js
+=> 7/7 ok in 2000ms
+Shell cwd was reset to /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+Bash Run suite against deterministic replica
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+echo "=== replica (deterministic baseline) ==="
+node tools/local-app/server.js > /dev/null 2>&1 &
+sleep 1.5
+BASE_URL=http://127.0.0.1:3100 npx playwright test --retries=0 --reporter=line 2>&1 | grep -oE "[0-9]+ (passed|failed).*"
+pkill -f "tools/local-app/server.js" 2>/dev/null; echo done
+
+OUT
+=== replica (deterministic baseline) ===
+30 passed (1.0m)
+done
+Replica is 30/30, so the suite logic is intact — my changes only touched CI config and docs. The live app is currently sluggish (2000ms for 7 requests vs 901ms earlier). Notably, the 3-worker CI simulation passed 30/30 during this same phase while 5-worker local runs didn't. Let me verify that pattern.
+
+Bash Two live runs at 3 workers
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+for i in 1 2; do
+  printf "3 workers, run %d: " "$i"
+  npx playwright test --workers=3 --retries=0 --reporter=line 2>&1 | grep -oE "[0-9]+ (passed|failed)" | tr '\n' ' '; echo
+done
+
+OUT
+3 workers, run 1: 1 failed 29 passed 
+3 workers, run 2: 1 failed 29 passed
+29/30 at 3 workers as well — so I won't claim fewer workers is more reliable; that earlier 30/30 was partly luck. The relevant check is whether CI's retries: 2 absorbs these.
+
+Bash Run exact CI invocation with retries
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+rm -rf test-results playwright-report
+echo "=== exactly what CI runs: CI=true, --workers=3, retries=2 ==="
+CI=true npx playwright test --workers=3 2>&1 | grep -oE "Running [0-9]+ tests using [0-9]+ workers?|[0-9]+ (passed|failed|flaky).*" | head -5
+ls test-results/ 2>/dev/null
+
+OUT
+=== exactly what CI runs: CI=true, --workers=3, retries=2 ===
+Running 30 tests using 3 workers
+30 passed (54.3s)
+30 passed (54.3s)
+junit.xml
+The exact CI invocation passes 30/30 even in this degraded phase — retries absorb the transient timeouts. Let me run final verify and commit.
+
+Bash Final verify
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+rm -rf test-results playwright-report
+npm run verify 2>&1 | grep -E "^>|error|warn|All matched|problems"
+
+OUT
+> heroku-playwright@1.0.0 verify
+> npm run typecheck && npm run lint && npm run format:check
+> heroku-playwright@1.0.0 typecheck
+> tsc --noEmit
+> heroku-playwright@1.0.0 lint
+> eslint .
+> heroku-playwright@1.0.0 format:check
+> prettier --check .
+All matched files use Prettier code style!
+Bash Review staged and unstaged changes
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+git status --porcelain; echo "--- branch ---"; git branch --show-current
+
+OUT
+RM .github/workflows/playwright.yml -> .github/workflows/tests.yml
+ M README.md
+ M playwright.config.ts
+--- branch ---
+main
+Three changes staged — but the previous turn's fixes (asset trimming, nav retry, .prettierignore) no longer show as modified. Let me check whether those got committed.
+
+Bash Check whether prior turn fixes are committed
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+git log --oneline -5; echo "--- are prior fixes committed? ---"
+git log --oneline -3 -- fixtures/pages.fixture.ts pages/base.page.ts .prettierignore
+echo "--- confirm content is in HEAD ---"
+git show HEAD:fixtures/pages.fixture.ts 2>/dev/null | grep -c "trimAssets" || echo "NOT in HEAD"
+git show HEAD:pages/base.page.ts 2>/dev/null | grep -c "NAVIGATION_ATTEMPTS" || echo "NOT in HEAD"
+git show HEAD:.prettierignore 2>/dev/null | grep -c "ai-sessions" || echo "NOT in HEAD"
+
+OUT
+7d8bffc Adding final AI interaction
+01ad114 Fixing CI
+8e97ab9 Initial commit
+04760f2 Initial commit
+--- are prior fixes committed? ---
+01ad114 Fixing CI
+8e97ab9 Initial commit
+--- confirm content is in HEAD ---
+3
+3
+1
+You'd already committed the previous turn's fixes (01ad114 Fixing CI), so the working tree holds exactly this turn's four changes. Committing to main, matching this repo's existing convention.
+
+Bash Commit the four compliance fixes
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+git add README.md playwright.config.ts .github/workflows/tests.yml
+git commit -q -F - <<'EOF'
+ci: cap parallelism at 3 workers, cache deps, rename workflow
+
+The brief limits concurrent execution to 3 workers. The previous layout
+could reach 12: a 3-browser matrix in which each job ran at the config's
+4 workers. Replace it with a single e2e job running all three projects
+at --workers=3, so total load on the shared target app is exactly 3
+regardless of how Playwright schedules the projects across them. The cap
+is set in both playwright.config.ts (CI) and the workflow, so it stays
+visible at the call site. The README documents the browser-matrix
+alternative, which preserves the cap only at 1 worker per job and trades
+runner minutes for wall time.
+
+Add two caches, both restored before anything installs: node_modules
+keyed on runner.os + hashFiles('package-lock.json'), with npm ci run
+only on a miss; and ~/.cache/ms-playwright keyed on runner.os + the
+installed Playwright version, read from @playwright/test's package.json
+so the key tracks the version that actually drives the browsers. On a
+browser-cache hit the binaries are restored but the OS packages they
+link against are not -- those live in /usr/lib, outside the cached path
+-- so a hit runs `playwright install-deps` and a miss runs
+`playwright install --with-deps`.
+
+Rename playwright.yml to tests.yml and update the README reference. The
+JUnit filename keeps its PW_PROJECT fallback, so the single job writes
+an unsuffixed junit.xml while a matrix layout would still get one file
+per project.
+
+Also remove a duplicated "Local replica" section from the README.
+
+Verified locally: npm run verify clean; `CI=true playwright test
+--workers=3` reports "Running 30 tests using 3 workers" across all three
+browsers, 30 passed, writing test-results/junit.xml.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+EOF
+git log --oneline -1; echo "--- tree clean? ---"; git status --porcelain || true
+
+OUT
+bd69cf2 ci: cap parallelism at 3 workers, cache deps, rename workflow
+--- tree clean? ---
+Bash Confirm rename detection and unpushed state
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+echo "=== rename recorded as rename? ==="
+git show --stat --find-renames HEAD | head -12
+echo "=== not pushed ==="
+git status -sb | head -2
+
+OUT
+=== rename recorded as rename? ===
+commit bd69cf22f1723bccd8d53835366b0fb5751142ab
+Author: AlfredPolanco <alfredpolanci@gmail.com>
+Date:   Tue Oct 6 17:12:03 2026 -0400
+
+    ci: cap parallelism at 3 workers, cache deps, rename workflow
+    
+    The brief limits concurrent execution to 3 workers. The previous layout
+    could reach 12: a 3-browser matrix in which each job ran at the config's
+    4 workers. Replace it with a single e2e job running all three projects
+    at --workers=3, so total load on the shared target app is exactly 3
+    regardless of how Playwright schedules the projects across them. The cap
+    is set in both playwright.config.ts (CI) and the workflow, so it stays
+=== not pushed ===
+## main...origin/main [ahead 1]
+All four items done, committed as bd69cf2, ahead of origin/main by 1 — not pushed.
+
+What changed
+1. Workflow renamed — playwright.yml → tests.yml via git mv (recorded as a rename), README reference updated. Workflow name: is now Tests.
+
+2. Parallelism capped at 3 — replaced the 3-browser matrix with a single e2e job running all three projects at --workers=3. Total concurrency is now exactly 3: Playwright schedules chromium/firefox/webkit across the same 3 workers, so adding browsers costs wall time, not load. Set in both playwright.config.ts (workers: isCI ? 3 : undefined) and the workflow. All three browsers install in that one job.
+
+The README explains the decision and the matrix alternative — viable only at --workers=1 per leg (3 jobs × 1 = 3), buying wall time for 3× runner minutes, 3× browser installs, and a split JUnit artifact.
+
+JUnit without PW_PROJECT: the fallback already handled it; verified the single job writes test-results/junit.xml. Kept PW_PROJECT support so switching to a matrix only needs the workflow changed.
+
+3. Caching — node_modules on runner.os + hashFiles('package-lock.json') with npm ci only on miss (both jobs); ~/.cache/ms-playwright on runner.os + the installed Playwright version, read from @playwright/test/package.json so the key tracks the version actually driving the browsers (that step runs after deps exist). Miss → install --with-deps, hit → install-deps, because a cache hit restores the binaries but not the OS packages they link against — those live in /usr/lib, outside the cached path. Without that split, a hit would restore browsers that fail to launch.
+
+4. Removed the duplicated "Local replica" section.
+
+Verification
+npm run verify — clean
+CI=true playwright test --workers=3 (the exact CI invocation) — "Running 30 tests using 3 workers", 30 passed, junit.xml written
+Replica, all browsers — 30/30
+One thing worth flagging: the live app slid into a degraded phase during this work, and --retries=0 runs gave 27–29/30, all page.goto timeouts, never assertion failures. The replica stayed at 30/30, confirming the suite logic is untouched — my changes only affect CI config and docs. The exact CI invocation (with retries: 2) passed 30/30 even in that phase.
+
+I also checked whether 3 workers is more reliable than the local default of 5 and it isn't — 3-worker runs also gave 29/30 — so I didn't add that claim to the README. The cap is justified as bounding load on a shared host, not as a flakiness fix.
+
+Commit is on main, matching this repo's existing convention. Say the word if you'd rather have it split into separate ci: and docs: commits, or moved to a branch.
