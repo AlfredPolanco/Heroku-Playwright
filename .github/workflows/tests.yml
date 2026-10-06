@@ -1,0 +1,126 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # The target app is a shared third-party host; a nightly run surfaces
+  # app-side drift (changed copy, changed markup) independently of our commits.
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Static checks are fast and need no browsers, so they run as their own job
+  # rather than serialising the e2e run behind a lint install.
+  static-checks:
+    name: Typecheck, lint & format
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # node_modules is cached directly, so the common path skips `npm ci`
+      # entirely rather than just reusing the download cache. Safe to key on the
+      # lockfile alone because node-version is pinned above, so the installed
+      # tree (including any native binaries) is reproducible per OS.
+      - name: Cache node_modules
+        id: node-modules-cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run format:check
+
+  e2e:
+    name: E2E (chromium, firefox, webkit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Cache node_modules
+        id: node-modules-cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
+        run: npm ci
+
+      # The browser cache key must track the Playwright version that will drive
+      # the browsers, so it is read from the installed package rather than the
+      # lockfile. This step therefore has to run after dependencies exist.
+      - name: Resolve Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright.outputs.version }}
+
+      # On a miss, download the browsers and their OS packages.
+      - name: Install browsers and OS dependencies
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps
+
+      # On a hit, the browser binaries are restored from the cache but the OS
+      # packages they link against are NOT -- those live in /usr/lib, outside the
+      # cached path, and a fresh runner does not have them. `install-deps`
+      # installs just those, skipping the browser download.
+      - name: Install OS dependencies only
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps
+
+      # All three browser projects run in this one job at --workers=3, so total
+      # concurrency against the shared target app is capped at 3 regardless of
+      # how Playwright schedules the projects. Passed explicitly here as well as
+      # set in playwright.config.ts, so the cap is visible at the call site.
+      - name: Run Playwright tests
+        run: npx playwright test --workers=3
+        env:
+          CI: true
+
+      # !cancelled(): the report is most valuable precisely when the run failed.
+      - name: Upload HTML report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+
+      - name: Upload traces, screenshots & JUnit results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results/
+          retention-days: 14

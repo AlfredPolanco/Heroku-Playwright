@@ -9,9 +9,11 @@ const isCI = Boolean(process.env.CI);
  *           UI, `html` with `open: 'never'` so the run never blocks on a
  *           browser, plus `list` so the raw log stays readable.
  *
- * The JUnit path is suffixed per browser project when PW_PROJECT is set, so a
- * CI matrix uploading one artifact per browser cannot overwrite a sibling's
- * results file.
+ * CI runs every browser project in a single job, so the default unsuffixed
+ * path is the normal case -- one run, one results file. `PW_PROJECT` remains
+ * supported so that splitting the projects back across parallel jobs (see the
+ * CI section of the README) still gives each one its own filename instead of
+ * siblings overwriting a shared artifact.
  */
 const junitOutputFile = process.env.PW_PROJECT
   ? `test-results/junit-${process.env.PW_PROJECT}.xml`
@@ -37,10 +39,13 @@ export default defineConfig({
 
   /* the-internet.herokuapp.com is a free, shared, third-party app. Unlimited
      workers would both hammer someone else's host and manufacture flakiness
-     via self-inflicted latency, so CI is capped at 4 -- enough to keep the run
-     fast, polite enough not to be the cause of its own failures. Locally,
-     Playwright's default (half the cores) is fine. */
-  workers: isCI ? 4 : undefined,
+     via self-inflicted latency, so CI is capped at 3 -- the agreed ceiling on
+     concurrent load against the target. Because all three browser projects run
+     in one CI job, this is the true total: 3 workers, not 3 per project. The
+     workflow passes `--workers=3` explicitly too, so the cap is visible at the
+     call site rather than only here. Locally, Playwright's default (half the
+     cores) is fine -- a developer run is one person, not a shared pipeline. */
+  workers: isCI ? 3 : undefined,
 
   /* Per-test budget. Must exceed the worst-case navigation spend -- three
      attempts at `navigationTimeout` plus backoff (~48s, see BasePage.navigate)

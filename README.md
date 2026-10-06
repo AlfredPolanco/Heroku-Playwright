@@ -138,7 +138,7 @@ So [`fixtures/pages.fixture.ts`](fixtures/pages.fixture.ts) aborts images, fonts
 - **Disabling HTTP/2.** Single `curl` requests succeeded while concurrent multiplexed ones timed out, which looked like a broken HTTP/2 path. Comparing Chromium with and without `--disable-http2` showed both loading fine — the app had simply recovered between probes. No evidence, so no workaround.
 - **Capping workers.** `--workers=1` did not help during a bad phase, confirming the suite was not the source of the load.
 
-`workers` is still capped at 4 in CI, but for courtesy to a shared host rather than as a flakiness fix.
+`workers` is still capped at 3 in CI (see [Parallelism](#parallelism-a-hard-cap-of-3-concurrent-workers)), but to bound load on a shared host rather than as a flakiness fix.
 
 ## Results
 
@@ -170,36 +170,34 @@ Fidelity: element ids, label/input wiring, accessible names, the inline `display
 
 It is a harness for the pages under test, **not** a general stand-in for the app. The suite targets live by default and passing against the replica is not a substitute for passing against live.
 
-## Local replica
-
-`tools/local-app/server.js` is a dependency-free Node server reproducing the pages under test, for when the upstream is unavailable and for deterministic stability runs:
-
-```bash
-npm run local-app                 # terminal 1
-npm run test:local                # terminal 2
-npm run test:stability:local      # the 120-run proof above
-```
-
-Fidelity: element ids, label/input wiring, accessible names, the inline `display:none` on `#finish`, the 5000 ms delay and the `/authenticate` flash-and-redirect behaviour are copied verbatim from the live app, so the same locators and the same timeout reasoning apply. It even reproduces the duplicate-heading strict-mode trap. Two deliberate differences: page scripts are rewritten in vanilla JS (identical DOM mutations and timing, without vendoring ~96 KB of jQuery), and decorative assets are omitted since no assertion depends on them.
-
-It is a harness for the pages under test, **not** a general stand-in for the app, and passing against it is not a substitute for passing against live.
-
 ## CI
 
-[`.github/workflows/playwright.yml`](.github/workflows/playwright.yml) — on push/PR to `main`, nightly, and manual dispatch.
+[`.github/workflows/tests.yml`](.github/workflows/tests.yml) — on push/PR to `main`, nightly, and manual dispatch.
 
-**Two jobs.** `static-checks` (typecheck, lint, format) runs separately from tests: it needs no browsers, so it gives fast feedback instead of sitting behind a browser install.
+**Two jobs.** `static-checks` (typecheck, lint, format) runs separately from `e2e`: it needs no browsers, so it gives fast feedback instead of sitting behind a browser install.
 
-**Parallelism, at two levels:**
+### Parallelism: a hard cap of 3 concurrent workers
 
-- _Across runners_ — a `matrix` over `[chromium, firefox, webkit]` puts each browser on its own runner, concurrently. `fail-fast: false`, so a WebKit-only break still reports Chromium and Firefox. Each job installs only the browser it needs.
-- _Within a runner_ — `fullyParallel: true` runs files **and** tests within a file in parallel. That is safe rather than optimistic here: every test navigates itself, shares no login state, and depends on no ordering.
+The constraint is **no more than 3 tests in flight at once**, because the target is a free shared dyno and concurrency is load. Honouring that means being careful about where parallelism multiplies:
 
-**Workers are capped at 4 in CI** out of courtesy to a shared third-party host, not as a flakiness fix — `--workers=1` was tested during a bad phase and did not help. Locally, Playwright's default (half the cores) applies.
+- `e2e` is a **single job** running all three browser projects at `--workers=3`. Total concurrency is therefore exactly 3 — Playwright schedules chromium, firefox and webkit tests across the same 3 workers, so adding browsers adds run time, not load.
+- `fullyParallel: true` means files **and** tests within a file are eligible to run in parallel, which is safe rather than optimistic here: every test navigates itself, shares no login state, and depends on no ordering. The worker count, not test independence, is what bounds concurrency.
+- `--workers=3` is passed in the workflow _and_ set via `workers: isCI ? 3 : undefined` in [playwright.config.ts](playwright.config.ts). Redundant on purpose: the cap stays visible at the call site, and a local `npx playwright test` with `CI=1` still honours it.
+
+**Why not a browser matrix?** A `matrix` over `[chromium, firefox, webkit]` is the more obvious shape and finishes in roughly a third of the wall time, since each browser gets its own runner. The catch is that workers multiply across jobs: three matrix legs at the config's 3 workers would put **9** concurrent requests on the shared app, and the cap would be silently violated by a setting that still reads `3`. The matrix is viable only at `--workers=1` per leg (3 jobs × 1 worker = 3), which keeps the cap and buys back wall time at the cost of 3× the runner minutes, 3× the browser installs, and a split JUnit artifact. For a suite that completes in well under a minute, the single job is the better trade; `PW_PROJECT` is still wired up in the config so switching back only needs the workflow changed.
 
 **Retries: 2 in CI, 0 locally.** CI retries absorb genuine upstream unreliability — cold dynos, transient 5xx. Locally they stay at 0 so flakiness is never hidden during development, and `test:stability` runs with retries off so it cannot be flattered by them.
 
-**Reporters.** Local: `list` + `html`. CI: `github` (inline PR annotations), `junit`, `html` with `open: 'never'` (so the run never blocks on a browser), plus `list` for a readable log. The JUnit path is suffixed per browser via `PW_PROJECT`, so the three matrix legs cannot overwrite each other's results file.
+**Reporters.** Local: `list` + `html`. CI: `github` (inline PR annotations), `junit`, `html` with `open: 'never'` (so the run never blocks on a browser), plus `list` for a readable log. With one job there is one JUnit file, `test-results/junit.xml`; setting `PW_PROJECT` suffixes it per project for the matrix layout described above.
+
+### Caching
+
+Two caches, both restored before anything is installed:
+
+- **`node_modules`**, keyed on `runner.os` + `hashFiles('package-lock.json')`. `npm ci` runs only on a miss, so the common path skips install entirely rather than merely reusing the npm download cache. Keying on the lockfile alone is sound because `node-version` is pinned, making the installed tree reproducible per OS.
+- **`~/.cache/ms-playwright`**, keyed on `runner.os` + the **installed Playwright version**, read from `@playwright/test/package.json` rather than inferred from the lockfile — so the key always tracks the version that will actually drive the browsers. That step runs after dependencies exist, for obvious reasons.
+
+The browser cache needs one subtlety: on a hit, the binaries come back but the OS packages they link against do not — those live in `/usr/lib`, outside the cached path, and a fresh runner lacks them. So a miss runs `npx playwright install --with-deps` and a hit runs `npx playwright install-deps`, which installs just the system packages and skips the ~400 MB download. Caching the binaries without this would restore browsers that fail to launch.
 
 **Artifacts** (HTML report, traces, screenshots, videos, JUnit XML) upload with `if: ${{ !cancelled() }}` — they are most valuable precisely when the run failed. `trace: 'on-first-retry'` keeps traces cheap while still capturing anything that needed a retry.
 
