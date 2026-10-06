@@ -1,0 +1,36 @@
+{
+  "name": "heroku-playwright",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Playwright + TypeScript UI automation suite for the-internet.herokuapp.com",
+  "license": "MIT",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "test:chromium": "playwright test --project=chromium",
+    "test:stability": "playwright test tests/dynamic-loading.spec.ts --repeat-each=20",
+    "report": "playwright show-report",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run typecheck && npm run lint && npm run format:check",
+    "local-app": "node tools/local-app/server.js",
+    "test:local": "BASE_URL=http://127.0.0.1:3100 playwright test",
+    "test:stability:local": "BASE_URL=http://127.0.0.1:3100 playwright test tests/dynamic-loading.spec.ts --repeat-each=20"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@playwright/test": "^1.49.1",
+    "@types/node": "^22.10.5",
+    "eslint": "^9.17.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-playwright": "^2.1.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.19.0"
+  }
+}
