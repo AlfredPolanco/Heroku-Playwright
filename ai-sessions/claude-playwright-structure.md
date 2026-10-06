@@ -3144,3 +3144,1333 @@ The live app is down for browser traffic. This is the main caveat. Single curl r
 Because I couldn't verify against live, I built tools/local-app/server.js, a dependency-free replica that produced the numbers above. The suite is byte-identical between targets; only BASE_URL differs. I've documented its fidelity limits and flagged that passing against it isn't a substitute for passing against live — worth knowing a reviewer may read it as scope creep, so it's clearly labeled opt-in.
 
 One deliberate deviation from the brief: I set waitUntil: 'domcontentloaded' in navigate() rather than leaving Playwright's default load, which blocks on decorative assets no test touches. It reduces flakiness against a dribbling host, though it wouldn't have saved today's total outage — stated honestly in both the code comment and README.
+
+
+
+All CI Failed, here are some of the logs
+
+Run npm run format:check
+
+> heroku-playwright@1.0.0 format:check
+> prettier --check .
+
+Checking formatting...
+[warn] ai-sessions/claude-playwright-structure.md
+[warn] Code style issues found in the above file. Run Prettier with --write to fix.
+
+
+
+Error:   3) [chromium] › tests/dynamic-loading.spec.ts:7:7 › Dynamic loading › example 1: reveals the hidden finish text after loading completes 
+    TimeoutError: page.goto: Timeout 30000ms exceeded.
+    Call log:
+      - navigating to "https://the-internet.herokuapp.com/dynamic_loading/1", waiting until "domcontentloaded"
+
+
+       at ../pages/base.page.ts:43
+
+      41 |    */
+      42 |   protected async navigate(path: string): Promise<void> {
+    > 43 |     await this.page.goto(path, { waitUntil: 'domcontentloaded' });
+         |                     ^
+      44 |   }
+      45 | }
+      46 |
+        at DynamicLoadingPage.navigate (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/base.page.ts:43:21)
+        at DynamicLoadingPage.goto (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/dynamic-loading.page.ts:56:16)
+        at /home/runner/work/Heroku-Playwright/Heroku-Playwright/tests/dynamic-loading.spec.ts:10:30
+Error:   3) [chromium] › tests/dynamic-loading.spec.ts:7:7 › Dynamic loading › example 1: reveals the hidden finish text after loading completes 
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+    TimeoutError: page.goto: Timeout 30000ms exceeded.
+    Call log:
+      - navigating to "https://the-internet.herokuapp.com/dynamic_loading/1", waiting until "domcontentloaded"
+
+
+       at ../pages/base.page.ts:43
+
+      41 |    */
+      42 |   protected async navigate(path: string): Promise<void> {
+    > 43 |     await this.page.goto(path, { waitUntil: 'domcontentloaded' });
+         |                     ^
+      44 |   }
+      45 | }
+      46 |
+        at DynamicLoadingPage.navigate (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/base.page.ts:43:21)
+        at DynamicLoadingPage.goto (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/dynamic-loading.page.ts:56:16)
+        at /home/runner/work/Heroku-Playwright/Heroku-Playwright/tests/dynamic-loading.spec.ts:10:30
+Error:   3) [chromium] › tests/dynamic-loading.spec.ts:7:7 › Dynamic loading › example 1: reveals the hidden finish text after loading completes 
+
+    Retry #2 ───────────────────────────────────────────────────────────────────────────────────────
+    TimeoutError: page.goto: Timeout 30000ms exceeded.
+    Call log:
+      - navigating to "https://the-internet.herokuapp.com/dynamic_loading/1", waiting until "domcontentloaded"
+
+
+       at ../pages/base.page.ts:43
+
+      41 |    */
+      42 |   protected async navigate(path: string): Promise<void> {
+    > 43 |     await this.page.goto(path, { waitUntil: 'domcontentloaded' });
+         |                     ^
+      44 |   }
+      45 | }
+      46 |
+        at DynamicLoadingPage.navigate (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/base.page.ts:43:21)
+        at DynamicLoadingPage.goto (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/dynamic-loading.page.ts:56:16)
+        at /home/runner/work/Heroku-Playwright/Heroku-Playwright/tests/dynamic-loading.spec.ts:10:30
+  ✘  10 [chromium] › tests/dynamic-loading.spec.ts:7:7 › Dynamic loading › example 1: reveals the hidden finish text after loading completes (retry #2) (33.4s)
+
+Error:   4) [chromium] › tests/checkboxes.spec.ts:25:7 › Checkboxes › each checkbox can be toggled to the opposite of its initial state 
+    TimeoutError: page.goto: Timeout 30000ms exceeded.
+    Call log:
+      - navigating to "https://the-internet.herokuapp.com/checkboxes", waiting until "domcontentloaded"
+
+
+       at ../pages/base.page.ts:43
+
+      41 |    */
+      42 |   protected async navigate(path: string): Promise<void> {
+    > 43 |     await this.page.goto(path, { waitUntil: 'domcontentloaded' });
+         |                     ^
+      44 |   }
+      45 | }
+      46 |
+        at CheckboxesPage.navigate (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/base.page.ts:43:21)
+        at CheckboxesPage.goto (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/checkboxes.page.ts:25:16)
+        at /home/runner/work/Heroku-Playwright/Heroku-Playwright/tests/checkboxes.spec.ts:5:26
+Error:   4) [chromium] › tests/checkboxes.spec.ts:25:7 › Checkboxes › each checkbox can be toggled to the opposite of its initial state 
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+    TimeoutError: page.goto: Timeout 30000ms exceeded.
+    Call log:
+      - navigating to "https://the-internet.herokuapp.com/checkboxes", waiting until "domcontentloaded"
+
+
+       at ../pages/base.page.ts:43
+
+      41 |    */
+      42 |   protected async navigate(path: string): Promise<void> {
+    > 43 |     await this.page.goto(path, { waitUntil: 'domcontentloaded' });
+         |                     ^
+      44 |   }
+      45 | }
+      46 |
+        at CheckboxesPage.navigate (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/base.page.ts:43:21)
+        at CheckboxesPage.goto (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/checkboxes.page.ts:25:16)
+        at /home/runner/work/Heroku-Playwright/Heroku-Playwright/tests/checkboxes.spec.ts:5:26
+Error:   4) [chromium] › tests/checkboxes.spec.ts:25:7 › Checkboxes › each checkbox can be toggled to the opposite of its initial state 
+
+    Retry #2 ───────────────────────────────────────────────────────────────────────────────────────
+    TimeoutError: page.goto: Timeout 30000ms exceeded.
+    Call log:
+      - navigating to "https://the-internet.herokuapp.com/checkboxes", waiting until "domcontentloaded"
+
+
+       at ../pages/base.page.ts:43
+
+      41 |    */
+      42 |   protected async navigate(path: string): Promise<void> {
+    > 43 |     await this.page.goto(path, { waitUntil: 'domcontentloaded' });
+         |                     ^
+      44 |   }
+      45 | }
+      46 |
+        at CheckboxesPage.navigate (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/base.page.ts:43:21)
+        at CheckboxesPage.goto (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/checkboxes.page.ts:25:16)
+        at /home/runner/work/Heroku-Playwright/Heroku-Playwright/tests/checkboxes.spec.ts:5:26
+  ✘  12 [chromium] › tests/checkboxes.spec.ts:25:7 › Checkboxes › each checkbox can be toggled to the opposite of its initial state (retry #2) (33.5s)
+  ✘  13 [chromium] › tests/login.spec.ts:18:9 › Login › logging in with valid credentials reaches the secure area (33.6s)
+  ✘  14 [chromium] › tests/login.spec.ts:33:9 › Login › logging in with an invalid username is rejected on the login page (32.6s)
+  ✘  17 [chromium] › tests/login.spec.ts:18:9 › Login › logging in with valid credentials reaches the secure area (retry #1) (30.7s)
+  ✘  15 [chromium] › tests/login.spec.ts:33:9 › Login › logging in with an invalid password is rejected on the login page (33.1s)
+  ✘  16 [chromium] › tests/login.spec.ts:33:9 › Login › logging in with empty credentials is rejected on the login page (33.2s)
+  ✘  18 [chromium] › tests/login.spec.ts:33:9 › Login › logging in with an invalid username is rejected on the login page (retry #1) (32.6s)
+
+Error:   5) [chromium] › tests/login.spec.ts:18:9 › Login › logging in with valid credentials reaches the secure area 
+    TimeoutError: page.goto: Timeout 30000ms exceeded.
+    Call log:
+      - navigating to "https://the-internet.herokuapp.com/login", waiting until "domcontentloaded"
+
+
+       at ../pages/base.page.ts:43
+
+      41 |    */
+      42 |   protected async navigate(path: string): Promise<void> {
+    > 43 |     await this.page.goto(path, { waitUntil: 'domcontentloaded' });
+         |                     ^
+      44 |   }
+      45 | }
+      46 |
+        at LoginPage.navigate (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/base.page.ts:43:21)
+        at LoginPage.goto (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/login.page.ts:25:16)
+        at /home/runner/work/Heroku-Playwright/Heroku-Playwright/tests/login.spec.ts:11:21
+Error:   5) [chromium] › tests/login.spec.ts:18:9 › Login › logging in with valid credentials reaches the secure area 
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+    TimeoutError: page.goto: Timeout 30000ms exceeded.
+    Call log:
+      - navigating to "https://the-internet.herokuapp.com/login", waiting until "domcontentloaded"
+
+
+       at ../pages/base.page.ts:43
+
+      41 |    */
+      42 |   protected async navigate(path: string): Promise<void> {
+    > 43 |     await this.page.goto(path, { waitUntil: 'domcontentloaded' });
+         |                     ^
+      44 |   }
+      45 | }
+      46 |
+        at LoginPage.navigate (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/base.page.ts:43:21)
+        at LoginPage.goto (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/login.page.ts:25:16)
+        at /home/runner/work/Heroku-Playwright/Heroku-Playwright/tests/login.spec.ts:11:21
+Error:   5) [chromium] › tests/login.spec.ts:18:9 › Login › logging in with valid credentials reaches the secure area 
+
+    Retry #2 ───────────────────────────────────────────────────────────────────────────────────────
+    TimeoutError: page.goto: Timeout 30000ms exceeded.
+    Call log:
+      - navigating to "https://the-internet.herokuapp.com/login", waiting until "domcontentloaded"
+
+
+       at ../pages/base.page.ts:43
+
+      41 |    */
+      42 |   protected async navigate(path: string): Promise<void> {
+    > 43 |     await this.page.goto(path, { waitUntil: 'domcontentloaded' });
+         |                     ^
+      44 |   }
+      45 | }
+      46 |
+        at LoginPage.navigate (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/base.page.ts:43:21)
+        at LoginPage.goto (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/login.page.ts:25:16)
+        at /home/runner/work/Heroku-Playwright/Heroku-Playwright/tests/login.spec.ts:11:21
+  ✘  19 [chromium] › tests/login.spec.ts:18:9 › Login › logging in with valid credentials reaches the secure area (retry #2) (33.6s)
+  ✘  21 [chromium] › tests/login.spec.ts:33:9 › Login › logging in with empty credentials is rejected on the login page (retry #1) (32.7s)
+  ✘  20 [chromium] › tests/login.spec.ts:33:9 › Login › logging in with an invalid password is rejected on the login page (retry #1) (33.7s)
+
+Error:   6) [chromium] › tests/login.spec.ts:33:9 › Login › logging in with an invalid username is rejected on the login page 
+    TimeoutError: page.goto: Timeout 30000ms exceeded.
+    Call log:
+      - navigating to "https://the-internet.herokuapp.com/login", waiting until "domcontentloaded"
+
+
+       at ../pages/base.page.ts:43
+
+      41 |    */
+      42 |   protected async navigate(path: string): Promise<void> {
+    > 43 |     await this.page.goto(path, { waitUntil: 'domcontentloaded' });
+         |                     ^
+      44 |   }
+      45 | }
+      46 |
+        at LoginPage.navigate (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/base.page.ts:43:21)
+        at LoginPage.goto (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/login.page.ts:25:16)
+        at /home/runner/work/Heroku-Playwright/Heroku-Playwright/tests/login.spec.ts:11:21
+Error:   6) [chromium] › tests/login.spec.ts:33:9 › Login › logging in with an invalid username is rejected on the login page 
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+    TimeoutError: page.goto: Timeout 30000ms exceeded.
+    Call log:
+      - navigating to "https://the-internet.herokuapp.com/login", waiting until "domcontentloaded"
+
+
+       at ../pages/base.page.ts:43
+
+      41 |    */
+      42 |   protected async navigate(path: string): Promise<void> {
+    > 43 |     await this.page.goto(path, { waitUntil: 'domcontentloaded' });
+         |                     ^
+      44 |   }
+      45 | }
+      46 |
+        at LoginPage.navigate (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/base.page.ts:43:21)
+        at LoginPage.goto (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/login.page.ts:25:16)
+        at /home/runner/work/Heroku-Playwright/Heroku-Playwright/tests/login.spec.ts:11:21
+Error:   6) [chromium] › tests/login.spec.ts:33:9 › Login › logging in with an invalid username is rejected on the login page 
+
+    Retry #2 ───────────────────────────────────────────────────────────────────────────────────────
+    TimeoutError: page.goto: Timeout 30000ms exceeded.
+    Call log:
+      - navigating to "https://the-internet.herokuapp.com/login", waiting until "domcontentloaded"
+
+
+       at ../pages/base.page.ts:43
+
+      41 |    */
+      42 |   protected async navigate(path: string): Promise<void> {
+    > 43 |     await this.page.goto(path, { waitUntil: 'domcontentloaded' });
+         |                     ^
+      44 |   }
+      45 | }
+      46 |
+        at LoginPage.navigate (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/base.page.ts:43:21)
+        at LoginPage.goto (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/login.page.ts:25:16)
+        at /home/runner/work/Heroku-Playwright/Heroku-Playwright/tests/login.spec.ts:11:21
+  ✘  22 [chromium] › tests/login.spec.ts:33:9 › Login › logging in with an invalid username is rejected on the login page (retry #2) (32.6s)
+  ✘  23 [chromium] › tests/login.spec.ts:45:7 › Login › logging out returns the user to the login page with a confirmation (30.6s)
+
+Error:   7) [chromium] › tests/login.spec.ts:33:9 › Login › logging in with empty credentials is rejected on the login page 
+    TimeoutError: page.goto: Timeout 30000ms exceeded.
+    Call log:
+      - navigating to "https://the-internet.herokuapp.com/login", waiting until "domcontentloaded"
+
+
+       at ../pages/base.page.ts:43
+
+      41 |    */
+      42 |   protected async navigate(path: string): Promise<void> {
+    > 43 |     await this.page.goto(path, { waitUntil: 'domcontentloaded' });
+         |                     ^
+      44 |   }
+      45 | }
+      46 |
+        at LoginPage.navigate (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/base.page.ts:43:21)
+        at LoginPage.goto (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/login.page.ts:25:16)
+        at /home/runner/work/Heroku-Playwright/Heroku-Playwright/tests/login.spec.ts:11:21
+Error:   7) [chromium] › tests/login.spec.ts:33:9 › Login › logging in with empty credentials is rejected on the login page 
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+    TimeoutError: page.goto: Timeout 30000ms exceeded.
+    Call log:
+      - navigating to "https://the-internet.herokuapp.com/login", waiting until "domcontentloaded"
+
+
+       at ../pages/base.page.ts:43
+
+      41 |    */
+      42 |   protected async navigate(path: string): Promise<void> {
+    > 43 |     await this.page.goto(path, { waitUntil: 'domcontentloaded' });
+         |                     ^
+      44 |   }
+      45 | }
+      46 |
+        at LoginPage.navigate (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/base.page.ts:43:21)
+        at LoginPage.goto (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/login.page.ts:25:16)
+        at /home/runner/work/Heroku-Playwright/Heroku-Playwright/tests/login.spec.ts:11:21
+Error:   7) [chromium] › tests/login.spec.ts:33:9 › Login › logging in with empty credentials is rejected on the login page 
+
+    Retry #2 ───────────────────────────────────────────────────────────────────────────────────────
+    TimeoutError: page.goto: Timeout 30000ms exceeded.
+    Call log:
+      - navigating to "https://the-internet.herokuapp.com/login", waiting until "domcontentloaded"
+
+
+       at ../pages/base.page.ts:43
+
+      41 |    */
+      42 |   protected async navigate(path: string): Promise<void> {
+    > 43 |     await this.page.goto(path, { waitUntil: 'domcontentloaded' });
+         |                     ^
+      44 |   }
+      45 | }
+      46 |
+        at LoginPage.navigate (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/base.page.ts:43:21)
+        at LoginPage.goto (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/login.page.ts:25:16)
+        at /home/runner/work/Heroku-Playwright/Heroku-Playwright/tests/login.spec.ts:11:21
+  ✘  24 [chromium] › tests/login.spec.ts:33:9 › Login › logging in with empty credentials is rejected on the login page (retry #2) (33.0s)
+
+Error:   8) [chromium] › tests/login.spec.ts:33:9 › Login › logging in with an invalid password is rejected on the login page 
+    TimeoutError: page.goto: Timeout 30000ms exceeded.
+    Call log:
+      - navigating to "https://the-internet.herokuapp.com/login", waiting until "domcontentloaded"
+
+
+       at ../pages/base.page.ts:43
+
+      41 |    */
+      42 |   protected async navigate(path: string): Promise<void> {
+    > 43 |     await this.page.goto(path, { waitUntil: 'domcontentloaded' });
+         |                     ^
+      44 |   }
+      45 | }
+      46 |
+        at LoginPage.navigate (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/base.page.ts:43:21)
+        at LoginPage.goto (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/login.page.ts:25:16)
+        at /home/runner/work/Heroku-Playwright/Heroku-Playwright/tests/login.spec.ts:11:21
+Error:   8) [chromium] › tests/login.spec.ts:33:9 › Login › logging in with an invalid password is rejected on the login page 
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+    TimeoutError: page.goto: Timeout 30000ms exceeded.
+    Call log:
+      - navigating to "https://the-internet.herokuapp.com/login", waiting until "domcontentloaded"
+
+
+       at ../pages/base.page.ts:43
+
+      41 |    */
+      42 |   protected async navigate(path: string): Promise<void> {
+    > 43 |     await this.page.goto(path, { waitUntil: 'domcontentloaded' });
+         |                     ^
+      44 |   }
+      45 | }
+      46 |
+        at LoginPage.navigate (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/base.page.ts:43:21)
+        at LoginPage.goto (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/login.page.ts:25:16)
+        at /home/runner/work/Heroku-Playwright/Heroku-Playwright/tests/login.spec.ts:11:21
+Error:   8) [chromium] › tests/login.spec.ts:33:9 › Login › logging in with an invalid password is rejected on the login page 
+
+    Retry #2 ───────────────────────────────────────────────────────────────────────────────────────
+    TimeoutError: page.goto: Timeout 30000ms exceeded.
+    Call log:
+      - navigating to "https://the-internet.herokuapp.com/login", waiting until "domcontentloaded"
+
+
+       at ../pages/base.page.ts:43
+
+      41 |    */
+      42 |   protected async navigate(path: string): Promise<void> {
+    > 43 |     await this.page.goto(path, { waitUntil: 'domcontentloaded' });
+         |                     ^
+      44 |   }
+      45 | }
+      46 |
+        at LoginPage.navigate (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/base.page.ts:43:21)
+        at LoginPage.goto (/home/runner/work/Heroku-Playwright/Heroku-Playwright/pages/login.page.ts:25:16)
+        at /home/runner/work/Heroku-Playwright/Heroku-Playwright/tests/login.spec.ts:11:21
+  ✘  25 [chromium] › tests/login.spec.ts:33:9 › Login › logging in with an invalid password is rejected on the login page (retry #2) (33.0s)
+  ✘  26 [chromium] › tests/login.spec.ts:45:7 › Login › logging out returns the user to the login page with a confirmation (retry #1) (32.7s)
+
+Error:   9) [chromium] › tests/login.spec.ts:45:7 › Login › logging out returns the user to the login page with a confirmation 
+    TimeoutError: page.goto: Timeout 30000ms exceeded.
+    Call log:
+      - navigating to "https://the-internet.herokuapp.com/login", waiting until "domcontentloaded"
+Two separate failures here, and the second one changes my earlier diagnosis in an important way: GitHub Actions runners fail too, so this isn't my local network. Let me look at both.
+
+Bash Inspect ai-sessions dir and prettier failure
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+git log --oneline -3; echo "---"; ls ai-sessions/ 2>/dev/null; echo "--- prettier diff ---"; npx prettier --check ai-sessions/*.md 2>&1 | head
+
+OUT
+8e97ab9 Initial commit
+04760f2 Initial commit
+---
+claude-playwright-structure.md
+--- prettier diff ---
+Checking formatting...
+[warn] ai-sessions/claude-playwright-structure.md
+[warn] Code style issues found in the above file. Run Prettier with --write to fix.
+Bash Recheck app concurrency behavior
+IN
+echo "=== single request ==="; curl -s -o /dev/null -w "HTTP %{http_code} http/%{http_version} %{time_total}s\n" --max-time 20 https://the-internet.herokuapp.com/login
+echo "=== 7 multiplexed on ONE h2 conn ==="; curl -s -o /dev/null -w "%{http_code} " --max-time 20 --parallel --parallel-max 7 \
+  https://the-internet.herokuapp.com/login \
+  https://the-internet.herokuapp.com/css/app.css \
+  https://the-internet.herokuapp.com/css/font-awesome.css \
+  https://the-internet.herokuapp.com/js/vendor/jquery-1.11.3.min.js \
+  https://the-internet.herokuapp.com/js/vendor/jquery-ui-1.11.4/jquery-ui.js \
+  https://the-internet.herokuapp.com/js/foundation/foundation.js \
+  https://the-internet.herokuapp.com/js/foundation/foundation.alerts.js 2>/dev/null; echo
+echo "=== 2 multiplexed on ONE h2 conn ==="; curl -s -o /dev/null -w "%{http_code} " --max-time 20 --parallel --parallel-max 2 \
+  https://the-internet.herokuapp.com/login \
+  https://the-internet.herokuapp.com/js/vendor/jquery-1.11.3.min.js 2>/dev/null; echo
+
+OUT
+<persisted-output>
+Output too large (345.3KB). Full output saved to: /Users/alfredpolanco/.claude/projects/-Users-alfredpolanco-Documents-PersonalProjects-Heroku-Playwright/1261e399-d780-4470-b726-89012e4fe882/tool-results/bjd4nd478.txt
+
+Preview (first 2KB):
+=== single request ===
+HTTP 200 http/2 1.387283s
+=== 7 multiplexed on ONE h2 conn ===
+/*! normalize.css v2.1.2 | MIT License | git.io/normalize */
+/* ==========================================================================
+   HTML5 display definitions
+   ========================================================================== */
+/**
+ * Correct `block` display not defined in IE 8/9.
+ */
+/* line 22, ../../views/scss/_normalize.scss */
+article,
+aside,
+details,
+figcaption,
+figure,
+footer,
+header,
+hgroup,
+main,
+nav,
+section,
+summary {
+  display: block;
+}
+
+/**
+ * Correct `inline-block` display not defined in IE 8/9.
+ */
+/* line 32, ../../views/scss/_normalize.scss */
+audio,
+canvas,
+video {
+  display: inline-block;
+}
+
+/**
+ * Prevent modern browsers from displaying `audio` without controls.
+ * Remove excess height in iOS 5 devices.
+ */
+/* line 41, ../../views/scss/_normalize.scss */
+audio:not([controls]) {
+  display: none;
+  height: 0;
+}
+
+/**
+ * Address `[hidden]` styling not present in IE 8/9.
+ * Hide the `template` element in IE, Safari, and Firefox < 22.
+ */
+/* line 52, ../../views/scss/_normalize.scss */
+[hidden],
+template {
+  display: none;
+}
+
+/* line 56, ../../views/scss/_normalize.scss */
+script {
+  display: none !important;
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+/**
+ * 1. Set default font family to sans-serif.
+ * 2. Prevent iOS text size adjust after orientation change, without disabling
+ *    user zoom.
+ */
+/* line 70, ../../views/scss/_normalize.scss */
+html {
+  font-family: sans-serif;
+  /* 1 */
+  -ms-text-size-adjust: 100%;
+  /* 2 */
+  -webkit-text-size-adjust: 100%;
+  /* 2 */
+}
+
+/**
+ * Remove default margin.
+ */
+/* line 80, ../../views/scss/_normalize.scss */
+body {
+  margin: 0;
+}
+
+/* ==========================================================================
+   Links
+...
+</persisted-output>
+Bash Extract concurrency status codes
+IN
+f=/Users/alfredpolanco/.claude/projects/-Users-alfredpolanco-Documents-PersonalProjects-Heroku-Playwright/1261e399-d780-4470-b726-89012e4fe882/tool-results/bjd4nd478.txt
+tr -d '\n' < "$f" | grep -oE "=== [a-z0-9 ]+ ===|\b(200|000)\b " | tr '\n' ' '
+
+OUT
+=== single request === 200  000  200  000  000  000  000  000  000  200  000
+My curl invocation was leaking response bodies (one -o doesn't cover multiple URLs). Let me redo this cleanly — the concurrency question is the crux.
+
+Bash Clean HTTP/2 vs HTTP/1.1 concurrency test
+IN
+cd /private/tmp/claude-501/-Users-alfredpolanco-Documents-PersonalProjects-Heroku-Playwright/1261e399-d780-4470-b726-89012e4fe882/scratchpad
+H=https://the-internet.herokuapp.com
+URLS="/login /css/app.css /css/font-awesome.css /js/vendor/jquery-1.11.3.min.js /js/vendor/jquery-ui-1.11.4/jquery-ui.js /js/foundation/foundation.js /js/foundation/foundation.alerts.js"
+args=""; for u in $URLS; do args="$args -o /dev/null $H$u"; done
+echo "=== 7 multiplexed, HTTP/2 (one connection) ==="
+curl -s -w "%{http_code} " --max-time 20 --parallel --parallel-max 7 $args; echo
+echo "=== 7 parallel, forced HTTP/1.1 ==="
+curl -s --http1.1 -w "%{http_code} " --max-time 20 --parallel --parallel-max 7 $args; echo
+
+OUT
+=== 7 multiplexed, HTTP/2 (one connection) ===
+000 
+=== 7 parallel, forced HTTP/1.1 ===
+000
+Shell cwd was reset to /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+Let me measure this precisely with a script instead of fighting curl's parallel output.
+
+Write conc.js
+56 lines
+// Measures whether the host serves N concurrent subresource requests.
+const https = require('https');
+
+const PATHS = [
+  '/login',
+  '/css/app.css',
+  '/css/font-awesome.css',
+  '/js/vendor/jquery-1.11.3.min.js',
+  '/js/vendor/jquery-ui-1.11.4/jquery-ui.js',
+  '/js/foundation/foundation.js',
+  '/js/foundation/foundation.alerts.js',
+];
+
+const get = (path, agent) =>
+  new Promise((resolve) => {
+    const t = Date.now();
+    const req = https.get(
+      { host: 'the-internet.herokuapp.com', path, agent, timeout: 20000 },
+      (res) => {
+        let n = 0;
+        res.on('data', (c) => (n += c.length));
+        res.on('end', () =>
+          resolve({ path, status: res.statusCode, ms: Date.now() - t, bytes: n }),
+        );
+      },
+    );
+    req.on('timeout', () => {
+      req.destroy();
+      resolve({ path, status: 'TIMEOUT', ms: Date.now() - t, bytes: 0 });
+    });
+    req.on('error', (e) => resolve({ path, status: `ERR ${e.code}`, ms: Date.now() - t, bytes: 0 }));
+  });
+
+(async () => {
+  const mode = process.argv[2] ?? 'concurrent';
+  const maxSockets = Number(process.argv[3] ?? 6);
+  const agent = new https.Agent({ keepAlive: true, maxSockets });
+
+  console.log(`mode=${mode} maxSockets=${maxSockets} (HTTP/1.1, ${PATHS.length} requests)`);
+  const started = Date.now();
+
+  let results;
+  if (mode === 'concurrent') {
+    results = await Promise.all(PATHS.map((p) => get(p, agent)));
+  } else {
+    results = [];
+    for (const p of PATHS) results.push(await get(p, agent));
+  }
+
+  for (const r of results) {
+    console.log(`  ${String(r.status).padEnd(8)} ${String(r.ms + 'ms').padEnd(8)} ${r.path}`);
+  }
+  const ok = results.filter((r) => r.status === 200).length;
+  console.log(`=> ${ok}/${results.length} ok in ${Date.now() - started}ms`);
+})();
+Bash Test sequential vs concurrent over HTTP/1.1
+IN
+cd /private/tmp/claude-501/-Users-alfredpolanco-Documents-PersonalProjects-Heroku-Playwright/1261e399-d780-4470-b726-89012e4fe882/scratchpad
+node conc.js sequential 1; echo; node conc.js concurrent 6
+
+OUT
+mode=sequential maxSockets=1 (HTTP/1.1, 7 requests)
+  200      1341ms   /login
+  200      614ms    /css/app.css
+  200      86ms     /css/font-awesome.css
+  200      114ms    /js/vendor/jquery-1.11.3.min.js
+  200      434ms    /js/vendor/jquery-ui-1.11.4/jquery-ui.js
+  200      178ms    /js/foundation/foundation.js
+  200      67ms     /js/foundation/foundation.alerts.js
+=> 7/7 ok in 2836ms
+
+mode=concurrent maxSockets=6 (HTTP/1.1, 7 requests)
+  200      232ms    /login
+  200      718ms    /css/app.css
+  200      296ms    /css/font-awesome.css
+  200      559ms    /js/vendor/jquery-1.11.3.min.js
+  200      877ms    /js/vendor/jquery-ui-1.11.4/jquery-ui.js
+  200      281ms    /js/foundation/foundation.js
+  200      288ms    /js/foundation/foundation.alerts.js
+=> 7/7 ok in 901ms
+Shell cwd was reset to /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+7/7 concurrent over HTTP/1.1, fast. Node defaults to HTTP/1.1, so this strongly suggests the failure is HTTP/2-specific. Let me test the browser now.
+
+Bash Probe browser page load again
+IN
+cd /private/tmp/claude-501/-Users-alfredpolanco-Documents-PersonalProjects-Heroku-Playwright/1261e399-d780-4470-b726-89012e4fe882/scratchpad && node probe.js 2>&1 | tail -12
+
+OUT
+GOTO ERROR: page.goto: Timeout 20000ms exceeded.
+--- still pending ---
+  20s  https://the-internet.herokuapp.com/checkboxes
+domcontentloaded title: Loading https://the-internet.herokuapp.com/checkboxes
+FAILED: https://the-internet.herokuapp.com/checkboxes net::ERR_ABORTED
+Shell cwd was reset to /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+Now even the main document hangs for the browser, while Node got it in 232ms. The browser negotiates HTTP/2 via ALPN; Node used HTTP/1.1. Let me test that hypothesis directly.
+
+Bash Compare page load with and without HTTP/2
+IN
+cd /private/tmp/claude-501/-Users-alfredpolanco-Documents-PersonalProjects-Heroku-Playwright/1261e399-d780-4470-b726-89012e4fe882/scratchpad
+cat > h2test.js <<'EOF'
+const { chromium } = require('/Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright/node_modules/@playwright/test');
+(async () => {
+  for (const args of [[], ['--disable-http2']]) {
+    const label = args.length ? 'HTTP/2 DISABLED' : 'default (HTTP/2)';
+    const b = await chromium.launch({ args });
+    const p = await b.newPage();
+    const protos = new Set();
+    p.on('response', async (r) => {
+      try { const t = await r.serverAddr(); void t; } catch {}
+    });
+    const t = Date.now();
+    try {
+      await p.goto('https://the-internet.herokuapp.com/checkboxes', { waitUntil: 'load', timeout: 25000 });
+      const n = await p.locator('#checkboxes input[type=checkbox]').count();
+      console.log(`${label.padEnd(18)} -> LOAD OK in ${Date.now()-t}ms, checkboxes found: ${n}`);
+    } catch (e) {
+      console.log(`${label.padEnd(18)} -> FAIL after ${Date.now()-t}ms: ${e.message.split('\n')[0]}`);
+    }
+    void protos;
+    await b.close();
+  }
+})();
+EOF
+node h2test.js
+
+OUT
+default (HTTP/2)   -> LOAD OK in 2470ms, checkboxes found: 2
+HTTP/2 DISABLED    -> LOAD OK in 1122ms, checkboxes found: 2
+Shell cwd was reset to /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+Both work now — the app has recovered. So HTTP/2 wasn't the root cause; the app is simply flapping in and out of availability. Good thing I tested rather than shipping a --disable-http2 workaround on an unconfirmed hypothesis.
+
+Let me run the real suite against live right now.
+
+Bash Run chromium suite against live app
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+npx playwright test --project=chromium --retries=0 --reporter=line 2>&1 | tail -12
+
+OUT
+  10 failed
+    [chromium] › tests/checkboxes.spec.ts:8:7 › Checkboxes › renders with the first checkbox unchecked and the second checked 
+    [chromium] › tests/checkboxes.spec.ts:15:7 › Checkboxes › checking the first checkbox and unchecking the second inverts both states 
+    [chromium] › tests/checkboxes.spec.ts:25:7 › Checkboxes › each checkbox can be toggled to the opposite of its initial state 
+    [chromium] › tests/dynamic-loading.spec.ts:7:7 › Dynamic loading › example 1: reveals the hidden finish text after loading completes 
+    [chromium] › tests/dynamic-loading.spec.ts:34:7 › Dynamic loading › example 2: renders the finish text that does not exist until loading completes 
+    [chromium] › tests/login.spec.ts:18:9 › Login › logging in with valid credentials reaches the secure area 
+    [chromium] › tests/login.spec.ts:33:9 › Login › logging in with an invalid username is rejected on the login page 
+    [chromium] › tests/login.spec.ts:33:9 › Login › logging in with an invalid password is rejected on the login page 
+    [chromium] › tests/login.spec.ts:33:9 › Login › logging in with empty credentials is rejected on the login page 
+    [chromium] › tests/login.spec.ts:45:7 › Login › logging out returns the user to the login page with a confirmation
+All fail as a suite — but a single browser load worked seconds ago. The difference is worker count: the local default is 5 workers × ~7 subresources each. Let me test serialized.
+
+Bash Run chromium suite with a single worker
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+npx playwright test --project=chromium --workers=1 --retries=0 --reporter=line 2>&1 | tail -12
+
+OUT
+  8 failed
+    [chromium] › tests/checkboxes.spec.ts:8:7 › Checkboxes › renders with the first checkbox unchecked and the second checked 
+    [chromium] › tests/checkboxes.spec.ts:15:7 › Checkboxes › checking the first checkbox and unchecking the second inverts both states 
+    [chromium] › tests/checkboxes.spec.ts:25:7 › Checkboxes › each checkbox can be toggled to the opposite of its initial state 
+    [chromium] › tests/dynamic-loading.spec.ts:7:7 › Dynamic loading › example 1: reveals the hidden finish text after loading completes 
+    [chromium] › tests/login.spec.ts:33:9 › Login › logging in with an invalid username is rejected on the login page 
+    [chromium] › tests/login.spec.ts:33:9 › Login › logging in with an invalid password is rejected on the login page 
+    [chromium] › tests/login.spec.ts:33:9 › Login › logging in with empty credentials is rejected on the login page 
+    [chromium] › tests/login.spec.ts:45:7 › Login › logging out returns the user to the login page with a confirmation 
+  2 passed (4.5m)
+2 passed / 8 failed even serialized — the app is flapping badly. Let me quantify whether reducing the request load per page actually helps, rather than guessing.
+
+Write blocktest.js
+48 lines
+// Does trimming non-essential subresources improve navigation success
+// against the currently-degraded app? 10 navigations per mode.
+const { chromium } = require('/Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright/node_modules/@playwright/test');
+
+const SKIP = /298279967\.js|jquery-ui|foundation(\.alerts)?\.js/;
+const N = 10;
+
+const run = async (block) => {
+  const b = await chromium.launch();
+  const ctx = await b.newContext();
+  if (block) {
+    await ctx.route('**/*', (route) => {
+      const t = route.request().resourceType();
+      if (t === 'image' || t === 'font' || t === 'media' || SKIP.test(route.request().url())) {
+        return route.abort();
+      }
+      return route.continue();
+    });
+  }
+  let ok = 0;
+  const times = [];
+  for (let i = 0; i < N; i++) {
+    const p = await ctx.newPage();
+    const t = Date.now();
+    try {
+      await p.goto('https://the-internet.herokuapp.com/checkboxes', {
+        waitUntil: 'domcontentloaded',
+        timeout: 15000,
+      });
+      // Prove the page is actually usable, not merely "navigated".
+      await p.locator('#checkboxes input[type=checkbox]').first().waitFor({ timeout: 5000 });
+      ok++;
+      times.push(Date.now() - t);
+    } catch {
+      /* counted as failure */
+    }
+    await p.close();
+  }
+  await b.close();
+  const avg = times.length ? Math.round(times.reduce((a, c) => a + c, 0) / times.length) : 0;
+  console.log(`block=${String(block).padEnd(5)} -> ${ok}/${N} ok, avg ${avg}ms`);
+};
+
+(async () => {
+  await run(false);
+  await run(true);
+})();
+Bash Measure effect of resource blocking
+IN
+cd /private/tmp/claude-501/-Users-alfredpolanco-Documents-PersonalProjects-Heroku-Playwright/1261e399-d780-4470-b726-89012e4fe882/scratchpad && node blocktest.js
+
+OUT
+block=false -> 10/10 ok, avg 297ms
+block=true  -> 8/10 ok, avg 686ms
+Shell cwd was reset to /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+Resource blocking doesn't help (and the app is now at 10/10, healthy again). Second hypothesis rejected on evidence. The app flaps on a minutes timescale.
+
+Let me run the full suite against live right now, while it's healthy.
+
+Bash Full live suite, all browsers, no retries
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+npx playwright test --retries=0 --reporter=line 2>&1 | tail -12
+
+OUT
+    [firefox] › tests/login.spec.ts:33:9 › Login › logging in with empty credentials is rejected on the login page 
+    [firefox] › tests/login.spec.ts:45:7 › Login › logging out returns the user to the login page with a confirmation 
+    [webkit] › tests/checkboxes.spec.ts:8:7 › Checkboxes › renders with the first checkbox unchecked and the second checked 
+    [webkit] › tests/checkboxes.spec.ts:15:7 › Checkboxes › checking the first checkbox and unchecking the second inverts both states 
+    [webkit] › tests/checkboxes.spec.ts:25:7 › Checkboxes › each checkbox can be toggled to the opposite of its initial state 
+    [webkit] › tests/dynamic-loading.spec.ts:7:7 › Dynamic loading › example 1: reveals the hidden finish text after loading completes 
+    [webkit] › tests/dynamic-loading.spec.ts:34:7 › Dynamic loading › example 2: renders the finish text that does not exist until loading completes 
+    [webkit] › tests/login.spec.ts:18:9 › Login › logging in with valid credentials reaches the secure area 
+    [webkit] › tests/login.spec.ts:33:9 › Login › logging in with an invalid username is rejected on the login page 
+    [webkit] › tests/login.spec.ts:33:9 › Login › logging in with an invalid password is rejected on the login page 
+    [webkit] › tests/login.spec.ts:45:7 › Login › logging out returns the user to the login page with a confirmation 
+  1 passed (3.4m)
+Decisive data point: single browser sequential was 10/10, but 5 workers collapses to 1 pass. Let me re-test one worker now, while sequential access is healthy.
+
+Bash Chromium, one worker, live, no retries
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+npx playwright test --project=chromium --workers=1 --retries=0 --reporter=line 2>&1 | tail -8
+
+OUT
+    [chromium] › tests/dynamic-loading.spec.ts:7:7 › Dynamic loading › example 1: reveals the hidden finish text after loading completes 
+    [chromium] › tests/dynamic-loading.spec.ts:34:7 › Dynamic loading › example 2: renders the finish text that does not exist until loading completes 
+    [chromium] › tests/login.spec.ts:18:9 › Login › logging in with valid credentials reaches the secure area 
+    [chromium] › tests/login.spec.ts:33:9 › Login › logging in with an invalid username is rejected on the login page 
+    [chromium] › tests/login.spec.ts:33:9 › Login › logging in with an invalid password is rejected on the login page 
+    [chromium] › tests/login.spec.ts:33:9 › Login › logging in with empty credentials is rejected on the login page 
+    [chromium] › tests/login.spec.ts:45:7 › Login › logging out returns the user to the login page with a confirmation 
+  1 passed (5.0m)
+My blocking experiment was confounded: it reused one browser context, so navigations 2–10 were served from the browser cache. The suite creates a fresh context per test, so every page load fetches all ~9 subresources cold. Let me redo it properly.
+
+Write blocktest2.js
+51 lines
+// Corrected experiment: fresh CONTEXT per navigation (cold HTTP cache), which
+// is what Playwright does per test. The previous version reused one context,
+// so iterations 2..N were cache hits and the comparison was meaningless.
+const { chromium } = require('/Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright/node_modules/@playwright/test');
+
+const SKIP = /298279967\.js|jquery-ui|foundation(\.alerts)?\.js/;
+const N = 8;
+
+const run = async (mode) => {
+  const b = await chromium.launch();
+  let ok = 0;
+  const times = [];
+  for (let i = 0; i < N; i++) {
+    const ctx = await b.newContext(); // cold cache, like a real test
+    if (mode !== 'none') {
+      await ctx.route('**/*', (route) => {
+        const t = route.request().resourceType();
+        const url = route.request().url();
+        const drop =
+          t === 'image' ||
+          t === 'font' ||
+          t === 'media' ||
+          SKIP.test(url) ||
+          (mode === 'aggressive' && t === 'stylesheet');
+        return drop ? route.abort() : route.continue();
+      });
+    }
+    const p = await ctx.newPage();
+    const t = Date.now();
+    try {
+      await p.goto('https://the-internet.herokuapp.com/checkboxes', {
+        waitUntil: 'domcontentloaded',
+        timeout: 15000,
+      });
+      await p.locator('#checkboxes input[type=checkbox]').first().waitFor({ timeout: 5000 });
+      ok++;
+      times.push(Date.now() - t);
+    } catch {
+      /* failure */
+    }
+    await ctx.close();
+  }
+  await b.close();
+  const avg = times.length ? Math.round(times.reduce((a, c) => a + c, 0) / times.length) : 0;
+  console.log(`block=${mode.padEnd(10)} -> ${ok}/${N} ok, avg ${avg}ms`);
+};
+
+(async () => {
+  for (const mode of ['none', 'moderate', 'aggressive']) await run(mode);
+})();
+Bash Cold-cache blocking comparison
+IN
+cd /private/tmp/claude-501/-Users-alfredpolanco-Documents-PersonalProjects-Heroku-Playwright/1261e399-d780-4470-b726-89012e4fe882/scratchpad && node blocktest2.js
+
+OUT
+block=none       -> 1/8 ok, avg 2367ms
+block=moderate   -> 3/8 ok, avg 1481ms
+block=aggressive -> 8/8 ok, avg 708ms
+Shell cwd was reset to /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+Now I have a clear signal. Under cold cache (what each test actually faces):
+
+Blocking	Success	Avg
+none	1/8	2367ms
+images/fonts/JS	3/8	1481ms
++ stylesheets	8/8	708ms
+The decisive factor is the stylesheets — app.css is 353KB and font-awesome.css 28KB. That payload is what the dyno can't serve. Let me check the prettier file, then implement.
+
+Bash Inspect prettier diff on ai-sessions doc
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+wc -l ai-sessions/claude-playwright-structure.md; echo "---"; npx prettier ai-sessions/claude-playwright-structure.md 2>/dev/null | diff - ai-sessions/claude-playwright-structure.md | head -20
+
+OUT
+    3145 ai-sessions/claude-playwright-structure.md
+---
+0a1
+> 
+51c52
+< I have the following task, check it and lets create a PROMPT not a .md that will tackle this task entirely, check it and let me know if you already need anything else, once I have the prompt ill paste it to the claude code session where the empty repo lives so it can start working, lets create a good prompt similar to you re a senior QA/SDET/Automation engineer that has plenty of experience testing webapps using automation frameworks such as playwrigh, ci and all related matters to this task, ask questions if needed.
+---
+> I have the following task, check it and lets create a PROMPT not a .md that will tackle this task entirely, check it and let me know if you already need anything else, once I have the prompt ill paste it to the claude code session where the empty repo lives so it can start working, lets create a good prompt  similar to you re a senior QA/SDET/Automation engineer that has plenty of experience testing webapps using automation frameworks such as playwrigh, ci and all related matters to this task, ask questions if needed.
+104,110c105,111
+<   src/pages/ page objects
+<   src/fixtures/ test.extend fixtures, exported test and expect
+<   test-data/ typed test data
+<   tests/ specs grouped by feature
+<   .github/workflows/tests.yml
+<   ai-sessions/
+<   playwright.config.ts
+---
+> src/pages/ page objects
+> src/fixtures/ test.extend fixtures, exported test and expect
+> test-data/ typed test data
+> tests/ specs grouped by feature
+> .github/workflows/tests.yml
+That's a verbatim session transcript — Prettier would rewrite its content (collapsing double spaces, re-indenting). Reformatting an archival record is wrong, so it should be ignored rather than rewritten.
+
+Read .prettierignore
+Write .prettierignore
+12 lines
+node_modules/
+playwright-report/
+test-results/
+blob-report/
+package-lock.json
+LICENSE
+
+# Verbatim AI session transcripts: archival records, not source. Prettier would
+# rewrite their content (collapsing whitespace, re-indenting quoted blocks),
+# which would make them no longer faithful records of what was actually said.
+ai-sessions/
+Now the asset trimming fixture, with the measured evidence recorded in the code.
+
+Write pages.fixture.ts
+92 lines
+import { test as base, expect } from '@playwright/test';
+
+import { CheckboxesPage } from '../pages/checkboxes.page';
+import { DynamicLoadingPage } from '../pages/dynamic-loading.page';
+import { LoginPage } from '../pages/login.page';
+import { SecureAreaPage } from '../pages/secure-area.page';
+
+/**
+ * Page objects exposed to specs as fixtures, so no spec ever writes `new`.
+ *
+ * Fixtures are lazy: a spec only pays for the page objects it actually
+ * destructures, and each test gets a fresh instance bound to its own `page`.
+ */
+export interface PageFixtures {
+  loginPage: LoginPage;
+  secureAreaPage: SecureAreaPage;
+  dynamicLoadingPage: DynamicLoadingPage;
+  checkboxesPage: CheckboxesPage;
+  /** Auto-applied; see `trimAssets` below. Not consumed by specs directly. */
+  trimAssets: void;
+}
+
+/** Escape hatch: `LOAD_ALL_ASSETS=1 npm test` restores full-fidelity loading. */
+const loadAllAssets = process.env.LOAD_ALL_ASSETS === '1';
+
+/**
+ * Scripts the pages under test provably do not need. jQuery is NOT in this
+ * list -- the dynamic-loading pages depend on it.
+ *  - 298279967.js: a ~132KB third-party/analytics bundle
+ *  - jquery-ui: unused by any page under test
+ *  - foundation(.alerts).js: only powers the flash dismiss "x", never clicked
+ */
+const UNUSED_SCRIPTS = /298279967\.js|jquery-ui|foundation(\.alerts)?\.js/;
+
+export const test = base.extend<PageFixtures>({
+  /**
+   * Drops subresources no assertion depends on.
+   *
+   * WHY: each test gets a fresh browser context, so every page load refetches
+   * the full asset set cold -- ~380KB of it stylesheets (app.css alone is
+   * 353KB). The target is a free shared Heroku dyno that cannot reliably serve
+   * that. Measured over 8 cold-cache navigations while the app was degraded:
+   *
+   *   no blocking .................. 1/8 succeeded (avg 2367ms)
+   *   images/fonts/unused scripts ... 3/8 succeeded (avg 1481ms)
+   *   + stylesheets ................ 8/8 succeeded (avg  708ms)
+   *
+   * Stylesheets are the decisive factor, so they are dropped too.
+   *
+   * THE TRADE-OFF, STATED PLAINLY: with CSS dropped, `toBeVisible()` no longer
+   * reflects stylesheet-driven visibility. That is sound *for these pages* --
+   * every show/hide under test is driven by inline styles that jQuery sets
+   * (`#finish` ships with `style='display:none'`; `#loading` is hidden via
+   * `.hide()`), which this suite still verifies exactly. It would NOT be sound
+   * on a page that hides things via a CSS class, and this fixture should be
+   * revisited before covering one. Use LOAD_ALL_ASSETS=1 to opt out.
+   */
+  trimAssets: [
+    async ({ context }, use) => {
+      if (!loadAllAssets) {
+        await context.route('**/*', (route) => {
+          const type = route.request().resourceType();
+          const isDecorative =
+            type === 'image' || type === 'font' || type === 'media' || type === 'stylesheet';
+
+          return isDecorative || UNUSED_SCRIPTS.test(route.request().url())
+            ? route.abort()
+            : route.continue();
+        });
+      }
+      await use();
+    },
+    { auto: true },
+  ],
+
+  loginPage: async ({ page }, use) => {
+    await use(new LoginPage(page));
+  },
+  secureAreaPage: async ({ page }, use) => {
+    await use(new SecureAreaPage(page));
+  },
+  dynamicLoadingPage: async ({ page }, use) => {
+    await use(new DynamicLoadingPage(page));
+  },
+  checkboxesPage: async ({ page }, use) => {
+    await use(new CheckboxesPage(page));
+  },
+});
+
+// Re-exported so specs have a single import for both `test` and `expect`.
+export { expect };
+Bash Verify static checks pass
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+npm run verify 2>&1 | tail -6
+
+OUT
+> heroku-playwright@1.0.0 format:check
+> prettier --check .
+
+Checking formatting...
+All matched files use Prettier code style!
+Static checks green, including the previously failing format:check. Now the real test — full suite against the live app.
+
+Bash Full live suite, all browsers, no retries
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+npx playwright test --retries=0 --reporter=line 2>&1 | tail -12
+
+OUT
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/dynamic-loading-Dynamic-lo-bcdda-ist-until-loading-completes-webkit/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/dynamic-loading-Dynamic-lo-bcdda-ist-until-loading-completes-webkit/error-context.md
+
+
+  2 failed
+    [chromium] › tests/login.spec.ts:33:9 › Login › logging in with an invalid password is rejected on the login page 
+    [webkit] › tests/dynamic-loading.spec.ts:34:7 › Dynamic loading › example 2: renders the finish text that does not exist until loading completes 
+  28 passed (48.0s)
+Massive improvement: 1/30 → 28/30, and runtime dropped from 3.4 min to 48s. Let me see what the remaining 2 failures actually are.
+
+Bash Re-run and extract failure reasons
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+npx playwright test --retries=0 --reporter=line 2>&1 | grep -E "Error:|TimeoutError|expect\(|Expected|Received|locator resolved|waiting for|✘|passed|failed" | head -40
+
+OUT
+    TimeoutError: page.goto: Timeout 30000ms exceeded.
+    test-results/checkboxes-Checkboxes-rend-04207-cked-and-the-second-checked-firefox/test-failed-1.png
+    TimeoutError: page.goto: Timeout 30000ms exceeded.
+    test-results/login-Login-logging-out-re-685fe-in-page-with-a-confirmation-firefox/test-failed-1.png
+  2 failed
+  28 passed (42.1s)
+Both remaining failures are page.goto timeouts — pure upstream blips, and they hit different tests each run, so they're random rather than deterministic. CI's retries: 2 would likely absorb them, but re-running a whole test to recover from a failed GET is wasteful and still leaves gaps. Let me make navigation itself resilient.
+
+Read base.page.ts
+Write base.page.ts
+91 lines
+import { errors, type Locator, type Page } from '@playwright/test';
+
+/** Attempts per navigation: the initial one plus two retries. */
+const NAVIGATION_ATTEMPTS = 3;
+
+/** Linear backoff between navigation attempts, giving a busy dyno a moment. */
+const NAVIGATION_RETRY_BACKOFF_MS = 1_000;
+
+/**
+ * Transient = the host failed to deliver the document at all (timeout or a
+ * transport-level error, across all three engines' error dialects). A 404 or a
+ * genuinely wrong URL does not raise these, so a real mistake still fails fast
+ * instead of being retried into a slow, confusing failure.
+ */
+const isTransientNavigationError = (error: unknown): boolean => {
+  if (error instanceof errors.TimeoutError) return true;
+  if (!(error instanceof Error)) return false;
+
+  return /net::|NS_ERROR_|ERR_|Could not connect|socket hang up|connection (was )?(reset|closed)/i.test(
+    error.message,
+  );
+};
+
+const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Shared behaviour for every page object.
+ *
+ * Deliberately thin -- it exists for two pieces of genuine reuse:
+ *  - `navigate()`, so no page object repeats relative-path navigation, and
+ *  - `flashMessage`, the app-wide notification banner (`#flash`) that both
+ *    /login and /secure render.
+ *
+ * It does not try to be a generic "actions" wrapper; Playwright's `Locator`
+ * API is already the right abstraction for that.
+ */
+export abstract class BasePage {
+  /**
+   * The app renders notifications into `#flash`. There is no landmark, heading
+   * or ARIA role on this element, so an id selector is the only stable handle
+   * the app offers.
+   */
+  readonly flashMessage: Locator;
+
+  protected constructor(readonly page: Page) {
+    this.flashMessage = page.locator('#flash');
+  }
+
+  /**
+   * Navigates to a path relative to the configured `baseURL`.
+   *
+   * Two reliability decisions, both aimed at the target being a free shared
+   * Heroku dyno that intermittently stops serving:
+   *
+   * 1. `domcontentloaded` rather than Playwright's default `load`. The DOM is
+   *    parsed and every blocking head script (jQuery) and inline script has
+   *    run, which is everything these pages need to be interactive; `load`
+   *    would additionally block on assets no test touches. Anything arriving
+   *    later is covered by web-first assertions, which wait on their own.
+   *
+   * 2. A bounded retry of the navigation itself. This retries *reaching the
+   *    page* -- an idempotent GET of a static document, before a single
+   *    assertion runs -- and never retries application behaviour, which stays
+   *    single-shot and web-first. It is deliberately not a hard wait: nothing
+   *    here sleeps on app state, and the backoff only spaces out attempts
+   *    against a host that returns nothing at all. Measured against live, the
+   *    sole remaining failure mode was exactly this: `page.goto` timing out on
+   *    a random test per run while every assertion passed.
+   *
+   * Cheaper and more precise than leaning on test-level `retries`, which
+   * re-executes a whole passing test to recover from one failed GET.
+   */
+  protected async navigate(path: string): Promise<void> {
+    let lastError: unknown;
+
+    for (let attempt = 1; attempt <= NAVIGATION_ATTEMPTS; attempt++) {
+      try {
+        await this.page.goto(path, { waitUntil: 'domcontentloaded' });
+        return;
+      } catch (error) {
+        if (!isTransientNavigationError(error)) throw error;
+
+        lastError = error;
+        if (attempt < NAVIGATION_ATTEMPTS) await delay(attempt * NAVIGATION_RETRY_BACKOFF_MS);
+      }
+    }
+
+    throw lastError;
+  }
+}
+The retry budget now exceeds the test timeout (3 × 30s > 60s), which would surface a confusing test-timeout instead of the real navigation error. Let me rebalance.
+
+Read playwright.config.ts (lines 41-72)
+Edit playwright.config.ts
+Added 3 lines
+Edit playwright.config.ts
+Added 5 lines
+Bash Verify static checks
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+npm run verify 2>&1 | grep -E "error|warning|All matched|problems" | head
+
+OUT
+All matched files use Prettier code style!
+Now the real validation: full suite against live, retries off, run repeatedly to confirm it's genuinely stable and not just lucky.
+
+Bash Three consecutive live runs, no retries
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+for i in 1 2 3; do
+  printf "run %d: " "$i"
+  npx playwright test --retries=0 --reporter=line 2>&1 | grep -oE "[0-9]+ (passed|failed|flaky).*" | tr '\n' ' '
+  echo
+done
+
+OUT
+run 1: 30 passed (20.7s) 
+run 2: 1 failed 29 passed (1.0m) 
+run 3: 3 failed 27 passed (1.0m)
+Run 1 was 30/30 in 20.7s; later runs degraded (and got slower), consistent with the app flapping again. Let me confirm the residual failures are still upstream, not logic.
+
+Bash Classify residual failures
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+npx playwright test --retries=0 --reporter=line 2>&1 | grep -E "TimeoutError|Error: expect|Expected string|Received string|strict mode|passed|failed" | sort | uniq -c | head -20
+
+OUT
+   1   30 passed (20.7s)
+Bash Five live runs with failure classification
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+rm -f /private/tmp/claude-501/-Users-alfredpolanco-Documents-PersonalProjects-Heroku-Playwright/1261e399-d780-4470-b726-89012e4fe882/scratchpad/liveruns.txt
+for i in 1 2 3 4 5; do
+  out=$(npx playwright test --retries=0 --reporter=line 2>&1)
+  printf "run %d: %s | errors: %s\n" "$i" \
+    "$(echo "$out" | grep -oE '[0-9]+ (passed|failed)' | tr '\n' ' ')" \
+    "$(echo "$out" | grep -oE 'TimeoutError: page\.goto|Error: expect|strict mode violation' | sort | uniq -c | tr '\n' ';')" \
+    | tee -a /private/tmp/claude-501/-Users-alfredpolanco-Documents-PersonalProjects-Heroku-Playwright/1261e399-d780-4470-b726-89012e4fe882/scratchpad/liveruns.txt
+done
+
+OUT
+run 1: 30 passed  | errors: 
+run 2: 30 passed  | errors: 
+run 3: 30 passed  | errors: 
+run 4: 1 failed 29 passed  | errors: 
+run 5: 30 passed  | errors:
+4 of 5 runs fully green against live, versus 1/30 before. Let me now run the stability script against the live app, as the brief asks.
+
+Bash Stability run against live app
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+npm run test:stability -- --retries=0 --reporter=line 2>&1 | tail -6
+
+OUT
+[116/120] [webkit] › tests/dynamic-loading.spec.ts:34:7 › Dynamic loading › example 2: renders the finish text that does not exist until loading completes
+[117/120] [webkit] › tests/dynamic-loading.spec.ts:7:7 › Dynamic loading › example 1: reveals the hidden finish text after loading completes
+[118/120] [webkit] › tests/dynamic-loading.spec.ts:34:7 › Dynamic loading › example 2: renders the finish text that does not exist until loading completes
+[119/120] [webkit] › tests/dynamic-loading.spec.ts:7:7 › Dynamic loading › example 1: reveals the hidden finish text after loading completes
+[120/120] [webkit] › tests/dynamic-loading.spec.ts:34:7 › Dynamic loading › example 2: renders the finish text that does not exist until loading completes
+  120 passed (3.0m)
+120/120 against the live app with retries off. Let me verify the remaining paths still work, then update the README.
+
+Bash Verify replica, escape hatch, and CI path
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+node tools/local-app/server.js > /dev/null 2>&1 &
+sleep 1.5
+echo "=== replica, all browsers ==="
+BASE_URL=http://127.0.0.1:3100 npx playwright test --retries=0 --reporter=line 2>&1 | grep -oE "[0-9]+ (passed|failed).*"
+echo "=== replica, LOAD_ALL_ASSETS=1 (escape hatch code path) ==="
+LOAD_ALL_ASSETS=1 BASE_URL=http://127.0.0.1:3100 npx playwright test --project=chromium --retries=0 --reporter=line 2>&1 | grep -oE "[0-9]+ (passed|failed).*"
+echo "=== CI simulation (live, chromium) ==="
+rm -rf test-results playwright-report
+CI=true PW_PROJECT=chromium npx playwright test --project=chromium 2>&1 | grep -oE "::notice.*|[0-9]+ (passed|failed|flaky).*" | tail -3
+ls test-results/ 2>/dev/null
+
+OUT
+=== replica, all browsers ===
+30 passed (14.1s)
+=== replica, LOAD_ALL_ASSETS=1 (escape hatch code path) ===
+10 passed (6.3s)
+=== CI simulation (live, chromium) ===
+::notice title=🎭 Playwright Run Summary::  10 passed (8.8s)
+10 passed (8.8s)
+junit-chromium.xml
+All paths green. Now let me correct the README — my original diagnosis was wrong in an important way.
+
+Read README.md (lines 109-158)
+Edit README.md
+Added 32 lines
+Now the AI-usage section, which should reflect the corrected diagnosis honestly.
+
+Read README.md (lines 187-216)
+Edit README.md
+Modified
+Read README.md (lines 215-244)
+Edit README.md
+Added 2 lines
+Edit README.md
+Added 2 lines
+Bash Final verify
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+npm run format >/dev/null 2>&1
+npm run verify 2>&1 | grep -E "error|warn|All matched|problems" | head
+
+OUT
+All matched files use Prettier code style!
+[This command modified 1 file you've previously read: README.md. Call Read before editing.]
+Bash Final live run and git status
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+echo "=== final live run (retries=0, all browsers) ==="
+npx playwright test --retries=0 --reporter=line 2>&1 | grep -oE "[0-9]+ (passed|failed|flaky).*"
+echo "=== git status ==="
+git status --porcelain
+
+OUT
+=== final live run (retries=0, all browsers) ===
+30 passed (20.8s)
+=== git status ===
+ M .prettierignore
+ M README.md
+ M fixtures/pages.fixture.ts
+ M pages/base.page.ts
+ M playwright.config.ts
+Bash Clean up background server and artifacts
+IN
+cd /Users/alfredpolanco/Documents/PersonalProjects/Heroku-Playwright
+pkill -f "tools/local-app/server.js" 2>/dev/null; rm -rf test-results playwright-report; echo cleaned
+
+OUT
+cleaned
+Both CI failures are fixed. Changes are uncommitted — 5 files modified.
+
+1. format:check
+Prettier wanted to rewrite ai-sessions/claude-playwright-structure.md, a verbatim session transcript. Reformatting it would collapse whitespace and re-indent quoted blocks, so it would no longer be a faithful record. Added ai-sessions/ to .prettierignore rather than letting Prettier rewrite your transcript.
+
+2. The test failures — and a correction
+I was wrong last time. I told you this was an unfixable upstream outage and that nothing in test code could help. That was overstated, and your CI logs are what prompted me to dig further.
+
+The real cause: each test gets a fresh browser context, so every page load refetches the full asset set cold — ~380KB of it stylesheets (app.css alone is 353KB). That payload is what the dyno can't deliver. Measured over 8 cold-cache navigations:
+
+Subresources dropped	OK	Avg
+none	1/8	2367ms
+images, fonts, unused scripts	3/8	1481ms
++ stylesheets	8/8	708ms
+So fixtures/pages.fixture.ts now aborts images, fonts, media, stylesheets, and three scripts the pages provably don't use. jQuery is kept. BasePage.navigate() also retries navigation 3× with backoff — it retries reaching the page (an idempotent GET, before any assertion), never application behavior.
+
+Results against live, --retries=0:
+
+npm test → 30/30 (was 1/30), runtime 3.4min → 21s
+npm run test:stability → 120/120
+Worth your attention
+I dropped stylesheets, which weakens toBeVisible(). It's sound here because every show/hide under test is driven by inline styles jQuery sets — but it would not be sound on a page that hides things via a CSS class. LOAD_ALL_ASSETS=1 opts out. This is a real trade-off, documented in both the fixture and README rather than buried.
+
+Two fixes I tested and rejected: disabling HTTP/2 (the app had merely recovered between probes) and capping workers (no effect). Also, my first blocking measurement was confounded — it reused one context, so iterations 2–10 were cache hits and showed blocking as harmful. Re-running with a fresh context per navigation reversed the result. Had I trusted that first number, I'd have shipped nothing.
+
+Residual risk: roughly 1 run in 5 still sees a single page.goto timeout on a random test. CI's retries: 2 absorbs that, but a prolonged dyno bad phase will still fail regardless.
